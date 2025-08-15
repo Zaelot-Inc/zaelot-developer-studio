@@ -8,12 +8,12 @@ import { Registry } from '../../../../platform/registry/common/platform.js';
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
 import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
-import { ILanguageModelStatsService } from '../../chat/common/languageModelStats.js';
+
 import { IConfigurationRegistry, Extensions as ConfigurationExtensions } from '../../../../platform/configuration/common/configurationRegistry.js';
 import { IClaudeApiClient, ClaudeApiClient } from '../common/claudeApiClient.js';
 import { IClaudeConfigurationService, ClaudeConfigurationService } from './claudeConfigurationService.js';
 import { ClaudeLanguageModelProvider } from '../common/claudeLanguageModelProvider.js';
-import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { ILanguageModelsService } from '../../chat/common/languageModels.js';
 import './claudeCommands.js';
@@ -25,7 +25,6 @@ class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContri
 	constructor(
 		@IClaudeApiClient private readonly claudeApiClient: IClaudeApiClient,
 		@IClaudeConfigurationService private readonly claudeConfigurationService: IClaudeConfigurationService,
-		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@ILogService private readonly logService: ILogService,
 		@ILanguageModelsService private readonly languageModelsService: ILanguageModelsService
 	) {
@@ -61,7 +60,6 @@ class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContri
 
 		this.claudeProvider = new ClaudeLanguageModelProvider(
 			this.claudeApiClient,
-			this.configurationService,
 			this.logService
 		);
 
@@ -85,14 +83,12 @@ configurationRegistry.registerConfiguration({
 	properties: {
 		'claude.apiKey': {
 			type: 'string',
-			description: 'API key for Claude AI service. Can also be set via CLAUDE_API_KEY environment variable.',
-			scope: 'application'
+			description: 'API key for Claude AI service. Can also be set via CLAUDE_API_KEY environment variable.'
 		},
 		'claude.baseUrl': {
 			type: 'string',
 			default: 'https://api.anthropic.com',
-			description: 'Base URL for Claude API service',
-			scope: 'application'
+			description: 'Base URL for Claude API service'
 		},
 		'claude.model': {
 			type: 'string',
@@ -107,28 +103,25 @@ configurationRegistry.registerConfiguration({
 				'Claude 3.5 Haiku - Fastest model',
 				'Claude 3 Opus - Most powerful model'
 			],
-			description: 'Default Claude model to use',
-			scope: 'application'
+			description: 'Default Claude model to use'
 		},
 		'claude.maxTokens': {
 			type: 'number',
 			default: 4096,
 			minimum: 1,
 			maximum: 8192,
-			description: 'Maximum number of tokens to generate in responses',
-			scope: 'application'
+			description: 'Maximum number of tokens to generate in responses'
 		},
 		'claude.temperature': {
 			type: 'number',
 			default: 0.7,
 			minimum: 0,
 			maximum: 1,
-			description: 'Controls randomness in responses (0 = more focused, 1 = more creative)',
-			scope: 'application'
+			description: 'Controls randomness in responses (0 = more focused, 1 = more creative)'
 		}
 	}
 });
 
 // Register workbench contribution
 const workbenchRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);
-workbenchRegistry.registerWorkbenchContribution(ClaudeWorkbenchContribution, LifecyclePhase.Ready);
+workbenchRegistry.registerWorkbenchContribution(ClaudeWorkbenchContribution, LifecyclePhase.Restored);

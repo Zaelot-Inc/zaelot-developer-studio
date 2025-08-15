@@ -4,21 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { CancellationToken } from '../../../../base/common/cancellation.js';
-import { Emitter, Event } from '../../../../base/common/event.js';
+import { Emitter } from '../../../../base/common/event.js';
 import { Disposable } from '../../../../base/common/lifecycle.js';
-import { IProgress } from '../../../../platform/progress/common/progress.js';
-import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
-import { VSBuffer } from '../../../../base/common/buffer.js';
 import {
 	ILanguageModelChatProvider,
-	ILanguageModelChatMetadata,
+	ILanguageModelChatMetadataAndIdentifier,
 	ILanguageModelChatResponse,
 	ChatMessageRole,
-	IChatMessage,
-	IChatResponseStream,
-	ILanguageModelChatSelector
-} from './languageModels.js';
+	IChatMessage
+} from '../../chat/common/languageModels.js';
+import { ExtensionIdentifier } from '../../../../platform/extensions/common/extensions.js';
 import { IClaudeApiClient } from './claudeApiClient.js';
 import { CLAUDE_MODELS, ClaudeModelId, IClaudeMessage } from './claudeTypes.js';
 
@@ -29,7 +25,6 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 
 	constructor(
 		private readonly claudeApiClient: IClaudeApiClient,
-		private readonly configurationService: IConfigurationService,
 		private readonly logService: ILogService
 	) {
 		super();
@@ -37,13 +32,6 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 		// Listen for Claude configuration changes
 		this._register(claudeApiClient.onDidChangeConfiguration(() => {
 			this._onDidChange.fire();
-		}));
-
-		// Listen for configuration changes
-		this._register(configurationService.onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration('claude')) {
-				this._onDidChange.fire();
-			}
 		}));
 	}
 
@@ -73,7 +61,7 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 		return Object.entries(CLAUDE_MODELS).map(([id, modelInfo]) => ({
 			identifier: `claude-${id}`,
 			metadata: {
-				extension: { value: 'internal.claude' } as any, // ExtensionIdentifier for internal Claude provider
+				extension: new ExtensionIdentifier('internal.claude'),
 				id: id as ClaudeModelId,
 				name: modelInfo.name,
 				family: modelInfo.family,
@@ -112,8 +100,6 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 				input_schema: tool.inputSchema || {}
 			}));
 
-			let responseText = '';
-
 			const claudeResponse = await this.claudeApiClient.sendMessage(
 				claudeMessages,
 				actualModelId,
@@ -131,10 +117,7 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 
 			return {
 				stream: this._createResponseStream(claudeResponse.content?.[0]?.text || ''),
-				result: Promise.resolve({
-					text: claudeResponse.content?.[0]?.text || '',
-					usage: claudeResponse.usage
-				})
+				result: Promise.resolve(claudeResponse.content?.[0]?.text || '')
 			};
 
 		} catch (error) {
@@ -160,18 +143,18 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 
 			// Handle array of content parts
 			if (Array.isArray(msg.content)) {
-				const content = msg.content.map(part => {
+				const content = msg.content.map((part: any) => {
 					if ('type' in part) {
 						switch (part.type) {
 							case 'text':
-								return { type: 'text', text: part.value };
+								return { type: 'text' as const, text: part.value };
 							case 'image_url':
 								// Handle image content for vision models
 								if ('data' in part.value && 'mimeType' in part.value) {
 									return {
-										type: 'image',
+										type: 'image' as const,
 										source: {
-											type: 'base64',
+											type: 'base64' as const,
 											media_type: part.value.mimeType,
 											data: part.value.data.toString('base64')
 										}
@@ -180,14 +163,15 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 								break;
 						}
 					}
-					return { type: 'text', text: String(part) };
+					return { type: 'text' as const, text: String(part) };
 				});
 
 				return { role, content };
 			}
 
-			// Fallback to string conversion
-			return { role, content: msg.content.map(p => p.type === 'text' ? p.value : '').join('') };
+			// Fallback to string conversion - msg.content should be an array
+			const contentArray = Array.isArray(msg.content) ? msg.content : [];
+			return { role, content: contentArray.map((p: any) => p.type === 'text' ? p.value : '').join('') };
 		});
 	}
 
@@ -203,8 +187,10 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 	private _extractTextFromMessage(message: IChatMessage): string {
 		if (Array.isArray(message.content)) {
 			return message.content
-				.map(part => {
-					if (part.type === 'text') return part.value;
+				.map((part: any) => {
+					if (part.type === 'text') {
+						return part.value;
+					}
 					return '';
 				})
 				.join(' ');
@@ -213,13 +199,13 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 		return '';
 	}
 
-	private _createResponseStream(text: string): IChatResponseStream {
+	private _createResponseStream(text: string): any {
 		// Simple implementation that yields the complete text
 		// In a real implementation, this would be a proper async iterator
 		return {
 			[Symbol.asyncIterator]: async function* () {
 				yield { type: 'text', value: text };
 			}
-		} as IChatResponseStream;
+		};
 	}
 }

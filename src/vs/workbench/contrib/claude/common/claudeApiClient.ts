@@ -4,9 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { CancellationToken } from '../../../../base/common/cancellation.js';
-import { Event } from '../../../../base/common/event.js';
-import { IDisposable } from '../../../../base/common/lifecycle.js';
-import { VSBuffer } from '../../../../base/common/buffer.js';
+import { Emitter } from '../../../../base/common/event.js';
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { IClaudeConfiguration, IClaudeMessage, IClaudeResponse, IClaudeStreamResponse, ClaudeModelId } from './claudeTypes.js';
 
@@ -18,7 +16,7 @@ export interface IClaudeApiClient {
 	/**
 	 * Event fired when the API client configuration changes
 	 */
-	readonly onDidChangeConfiguration: Event<void>;
+	readonly onDidChangeConfiguration: import('../../../../base/common/event.js').Event<void>;
 
 	/**
 	 * Configure the API client with API key and other settings
@@ -61,7 +59,7 @@ export class ClaudeApiClient implements IClaudeApiClient {
 	readonly _serviceBrand: undefined;
 
 	private _configuration: IClaudeConfiguration | undefined;
-	private readonly _onDidChangeConfiguration = new Event<void>();
+	private readonly _onDidChangeConfiguration = new Emitter<void>();
 	readonly onDidChangeConfiguration = this._onDidChangeConfiguration.event;
 
 	constructor() {
@@ -159,7 +157,9 @@ export class ClaudeApiClient implements IClaudeApiClient {
 				}
 
 				const { done, value } = await reader.read();
-				if (done) break;
+				if (done) {
+					break;
+				}
 
 				buffer += decoder.decode(value, { stream: true });
 				const lines = buffer.split('\n');
@@ -168,7 +168,9 @@ export class ClaudeApiClient implements IClaudeApiClient {
 				for (const line of lines) {
 					if (line.startsWith('data: ')) {
 						const data = line.slice(6);
-						if (data === '[DONE]') continue;
+						if (data === '[DONE]') {
+							continue;
+						}
 
 						try {
 							const chunk = JSON.parse(data) as IClaudeStreamResponse;
