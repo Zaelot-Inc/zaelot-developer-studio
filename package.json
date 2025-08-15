@@ -227,13 +227,13 @@
       "node-addon-api": "7.1.0"
     }
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Zaelot-Inc/vscode.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Zaelot-Inc/vscode/issues"
-  },
+  	"repository": {
+		"type": "git",
+		"url": "https://github.com/Zaelot-Inc/zaelot-developer-studio.git"
+	},
+	"bugs": {
+		"url": "https://github.com/Zaelot-Inc/zaelot-developer-studio/issues"
+	},
   "optionalDependencies": {
     "windows-foreground-love": "0.5.0"
   }
