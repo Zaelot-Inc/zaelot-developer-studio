@@ -1,0 +1,71 @@
+/*
+ * Zaelot Developer Studio Brand Colors
+ * Professional color scheme for development environment
+ */
+
+:root {
+	/* Primary Brand Colors - Official Zaelot */
+	--zaelot-thunder: #211e20; /* Thunder - Primary Dark */
+	--zaelot-alabaster: #ffffff; /* Alabaster - Primary Light */
+
+	/* Support Colors - Official Zaelot */
+	--zaelot-zaelow: #f3e060; /* Zaelow - Brand Yellow */
+	--zaelot-dove-gray: #707070; /* Dove Gray */
+	--zaelot-mercury: #e5e5e5; /* Mercury */
+	--zaelot-wild-sand: #f5f5f5; /* Wild Sand */
+
+	/* Internal Use Support Colors */
+	--zaelot-violeta: #6154bd; /* Violeta */
+	--zaelot-violeta-30: #d0cceb; /* Violeta 30% */
+	--zaelot-violeta-10: #efeef8; /* Violeta 10% */
+	--zaelot-cielo-blue: #60bdf3; /* Cielo Blue */
+	--zaelot-cielo-blue-30: #cfebfb; /* Cielo Blue 30% */
+	--zaelot-cielo-blue-10: #eff8fe; /* Cielo Blue 10% */
+	--zaelot-zaelow-30: #fbf6cf; /* Zaelow 30% */
+	--zaelot-zaelow-10: #fefcef; /* Zaelow 10% */
+
+	/* Semantic Colors for IDE */
+	--zaelot-primary: var(--zaelot-thunder); /* Primary Dark */
+	--zaelot-primary-light: var(--zaelot-dove-gray); /* Lighter variant */
+	--zaelot-accent: var(--zaelot-zaelow); /* Primary accent */
+	--zaelot-accent-light: var(--zaelot-zaelow-30); /* Light accent */
+
+	/* Background Colors */
+	--zaelot-bg-primary: var(--zaelot-thunder); /* Main Background */
+	--zaelot-bg-secondary: #2a2628; /* Slightly lighter than Thunder */
+	--zaelot-bg-tertiary: #3a3638; /* Even lighter for panels */
+
+	/* Text Colors */
+	--zaelot-text-primary: var(--zaelot-alabaster); /* Primary Text */
+	--zaelot-text-secondary: var(--zaelot-mercury); /* Secondary Text */
+	--zaelot-text-muted: var(--zaelot-dove-gray); /* Muted Text */
+
+	/* Status Colors */
+	--zaelot-success: #4caf50; /* Success Green */
+	--zaelot-warning: #ff9800; /* Warning Orange */
+	--zaelot-error: #f44336; /* Error Red */
+	--zaelot-info: var(--zaelot-cielo-blue); /* Info Blue */
+
+	/* Claude AI Integration Colors */
+	--zaelot-claude-primary: #ff6b35; /* Claude Orange */
+	--zaelot-claude-secondary: #ffb399; /* Light Claude Orange */
+}
+
+/* Zaelot Brand Theme Variables for VSCode */
+.zaelot-theme {
+	--vscode-foreground: var(--zaelot-alabaster);
+	--vscode-background: var(--zaelot-thunder);
+	--vscode-sideBar-background: var(--zaelot-bg-secondary);
+	--vscode-activityBar-background: var(--zaelot-bg-tertiary);
+	--vscode-titleBar-activeBackground: var(--zaelot-thunder);
+	--vscode-titleBar-activeForeground: var(--zaelot-alabaster);
+	--vscode-statusBar-background: var(--zaelot-thunder);
+	--vscode-statusBar-foreground: var(--zaelot-alabaster);
+	--vscode-button-background: var(--zaelot-zaelow);
+	--vscode-button-foreground: var(--zaelot-thunder);
+	--vscode-button-hoverBackground: var(--zaelot-zaelow-30);
+	--vscode-focusBorder: var(--zaelot-zaelow);
+	--vscode-selection-background: var(--zaelot-zaelow-30);
+	--vscode-list-activeSelectionBackground: var(--zaelot-zaelow-30);
+	--vscode-list-hoverBackground: var(--zaelot-zaelow-10);
+}
