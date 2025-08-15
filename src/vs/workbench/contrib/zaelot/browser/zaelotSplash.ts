@@ -39,7 +39,7 @@ export class ZaelotSplashService extends Disposable {
 		const currentTheme = this.themeService.getColorTheme();
 		const isDark = currentTheme.type === 'dark';
 
-		splashElement.innerHTML = this._getSplashHTML(isDark);
+		this._createSplashContent(splashElement, isDark);
 		splashElement.style.cssText = this._getSplashCSS(isDark);
 
 		// Insert splash screen
@@ -48,29 +48,59 @@ export class ZaelotSplashService extends Disposable {
 		this.logService.info('Zaelot splash screen created');
 	}
 
-	private _getSplashHTML(isDark: boolean): string {
-		return `
-			<div class="zaelot-splash-content">
-				<div class="zaelot-splash-logo">
-					<div class="zaelot-logo-circle">
-						<span class="zaelot-logo-text">Z</span>
-					</div>
-				</div>
-				<div class="zaelot-splash-title">
-					<h1>Zaelot Developer Studio</h1>
-					<p>Powered by Claude AI</p>
-				</div>
-				<div class="zaelot-splash-loading">
-					<div class="zaelot-loading-bar">
-						<div class="zaelot-loading-progress"></div>
-					</div>
-					<p class="zaelot-loading-text">Initializing your AI-powered development environment...</p>
-				</div>
-				<div class="zaelot-splash-footer">
-					<p>&copy; 2025 Zaelot Inc. All rights reserved.</p>
-				</div>
-			</div>
-		`;
+	private _createSplashContent(splashElement: HTMLElement, isDark: boolean): void {
+		// Create splash content with DOM elements instead of innerHTML
+		const contentDiv = mainWindow.document.createElement('div');
+		contentDiv.className = 'zaelot-splash-content';
+
+		// Logo section
+		const logoDiv = mainWindow.document.createElement('div');
+		logoDiv.className = 'zaelot-splash-logo';
+		const logoCircle = mainWindow.document.createElement('div');
+		logoCircle.className = 'zaelot-logo-circle';
+		const logoText = mainWindow.document.createElement('span');
+		logoText.className = 'zaelot-logo-text';
+		logoText.textContent = 'Z';
+		logoCircle.appendChild(logoText);
+		logoDiv.appendChild(logoCircle);
+
+		// Title section
+		const titleDiv = mainWindow.document.createElement('div');
+		titleDiv.className = 'zaelot-splash-title';
+		const title = mainWindow.document.createElement('h1');
+		title.textContent = 'Zaelot Developer Studio';
+		const subtitle = mainWindow.document.createElement('p');
+		subtitle.textContent = 'Powered by Claude AI';
+		titleDiv.appendChild(title);
+		titleDiv.appendChild(subtitle);
+
+		// Loading section
+		const loadingDiv = mainWindow.document.createElement('div');
+		loadingDiv.className = 'zaelot-splash-loading';
+		const loadingBar = mainWindow.document.createElement('div');
+		loadingBar.className = 'zaelot-loading-bar';
+		const loadingProgress = mainWindow.document.createElement('div');
+		loadingProgress.className = 'zaelot-loading-progress';
+		loadingBar.appendChild(loadingProgress);
+		const loadingText = mainWindow.document.createElement('p');
+		loadingText.className = 'zaelot-loading-text';
+		loadingText.textContent = 'Initializing your AI-powered development environment...';
+		loadingDiv.appendChild(loadingBar);
+		loadingDiv.appendChild(loadingText);
+
+		// Footer section
+		const footerDiv = mainWindow.document.createElement('div');
+		footerDiv.className = 'zaelot-splash-footer';
+		const footerText = mainWindow.document.createElement('p');
+		footerText.textContent = '© 2025 Zaelot Inc. All rights reserved.';
+		footerDiv.appendChild(footerText);
+
+		// Assemble everything
+		contentDiv.appendChild(logoDiv);
+		contentDiv.appendChild(titleDiv);
+		contentDiv.appendChild(loadingDiv);
+		contentDiv.appendChild(footerDiv);
+		splashElement.appendChild(contentDiv);
 	}
 
 	private _getSplashCSS(isDark: boolean): string {

@@ -90,15 +90,30 @@ class ZaelotWorkbenchContribution extends Disposable implements IWorkbenchContri
 			// Add Zaelot branding to welcome page
 			const brandingDiv = mainWindow.document.createElement('div');
 			brandingDiv.className = 'zaelot-branding';
-			brandingDiv.innerHTML = `
-				<div class="zaelot-welcome-header">
-					<div class="zaelot-logo">Z</div>
-					<div>
-						<h1 class="zaelot-welcome-title">Zaelot Developer Studio</h1>
-						<p class="zaelot-welcome-subtitle">Powered by Claude AI</p>
-					</div>
-				</div>
-			`;
+
+			// Create header structure with DOM elements instead of innerHTML
+			const headerDiv = mainWindow.document.createElement('div');
+			headerDiv.className = 'zaelot-welcome-header';
+
+			const logoDiv = mainWindow.document.createElement('div');
+			logoDiv.className = 'zaelot-logo';
+			logoDiv.textContent = 'Z';
+
+			const textContainer = mainWindow.document.createElement('div');
+
+			const title = mainWindow.document.createElement('h1');
+			title.className = 'zaelot-welcome-title';
+			title.textContent = 'Zaelot Developer Studio';
+
+			const subtitle = mainWindow.document.createElement('p');
+			subtitle.className = 'zaelot-welcome-subtitle';
+			subtitle.textContent = 'Powered by Claude AI';
+
+			textContainer.appendChild(title);
+			textContainer.appendChild(subtitle);
+			headerDiv.appendChild(logoDiv);
+			headerDiv.appendChild(textContainer);
+			brandingDiv.appendChild(headerDiv);
 
 			// Insert at the beginning of welcome container
 			welcomeContainer.insertBefore(brandingDiv, welcomeContainer.firstChild);
@@ -135,9 +150,11 @@ class ZaelotWorkbenchContribution extends Disposable implements IWorkbenchContri
 		if (statusBar) {
 			const claudeIndicator = mainWindow.document.createElement('div');
 			claudeIndicator.className = 'statusbar-item zaelot-claude-status';
-			claudeIndicator.innerHTML = `
-				<span class="zaelot-status-connected">Claude AI Ready</span>
-			`;
+			// Create status content with DOM elements instead of innerHTML
+			const statusSpan = mainWindow.document.createElement('span');
+			statusSpan.className = 'zaelot-status-connected';
+			statusSpan.textContent = 'Claude AI Ready';
+			claudeIndicator.appendChild(statusSpan);
 			claudeIndicator.title = 'Claude AI Integration Status';
 
 			// Insert at the beginning of right status bar
