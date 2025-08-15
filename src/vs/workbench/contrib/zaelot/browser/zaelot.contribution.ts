@@ -12,9 +12,14 @@ import { IWorkbenchLayoutService } from '../../../services/layout/browser/layout
 import { ILifecycleService, LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
 import { ZaelotSplashService } from './zaelotSplash.js';
 import { mainWindow } from '../../../../base/browser/window.js';
+import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
+import { IMigrationService, MigrationService } from './migrationService.js';
 
 // Import theme colors
 import './zaelotTheme.js';
+
+// Import migration commands
+import './migrationCommands.js';
 
 class ZaelotWorkbenchContribution extends Disposable implements IWorkbenchContribution {
 
@@ -39,6 +44,8 @@ class ZaelotWorkbenchContribution extends Disposable implements IWorkbenchContri
 			this.lifecycleService,
 			this.logService
 		));
+
+		// Migration service is available via dependency injection
 
 		// Apply Zaelot branding enhancements
 		this._applyZaelotStyling();
@@ -138,6 +145,9 @@ class ZaelotWorkbenchContribution extends Disposable implements IWorkbenchContri
 		}
 	}
 }
+
+// Register services
+registerSingleton(IMigrationService, MigrationService, InstantiationType.Delayed);
 
 // Register the workbench contribution
 const workbenchRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);

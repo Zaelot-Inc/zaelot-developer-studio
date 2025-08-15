@@ -731,6 +731,12 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					},
 				},
 				{
+					id: 'migration.import',
+					title: localize('gettingStarted.migration.import.title', "Import from VS Code / Cursor"),
+					description: localize('gettingStarted.migration.import.description.interpolated', "Already using VS Code or Cursor? Import your extensions, settings, and configurations to get started faster.\n{0}", Button(localize('startImport', "Import Now"), 'command:zaelot.importFromOtherEditors')),
+					media: { type: 'svg', altText: 'Import extensions and settings from other editors', path: 'extensions.svg' },
+				},
+				{
 					id: 'newCommandPaletteTask',
 					title: localize('newgettingStarted.commandPalette.title', "All commands within reach"),
 					description: localize('gettingStarted.commandPalette.description.interpolated', "Run commands without reaching for your mouse to accomplish any task in Zaelot Developer Studio.\n{0}", Button(localize('commandPalette', "Open Command Palette"), 'command:workbench.action.showCommands')),
