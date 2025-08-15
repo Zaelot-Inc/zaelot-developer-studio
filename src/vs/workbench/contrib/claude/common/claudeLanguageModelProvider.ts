@@ -65,7 +65,7 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 				id: id as ClaudeModelId,
 				name: modelInfo.name,
 				family: modelInfo.family,
-				vendor: 'claude',
+				vendor: 'anthropic',
 				description: `${modelInfo.name} - Advanced AI assistant by Anthropic`,
 				version: id.split('-').pop() || '1.0',
 				maxInputTokens: modelInfo.maxInputTokens,
