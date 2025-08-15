@@ -30,10 +30,38 @@
 
 ## Quick Start
 
+### Option 1: Auto-Install (Recommended)
+```bash
+# One-command installation
+curl -fsSL https://raw.githubusercontent.com/Zaelot-Inc/zaelot-developer-studio/main/scripts/install-zaelot.sh | bash
+
+# Start the application
+zaelot
+```
+
+### Option 2: Manual Installation
+```bash
+# Clone the repository
+git clone https://github.com/Zaelot-Inc/zaelot-developer-studio.git
+cd zaelot-developer-studio
+
+# Install dependencies & build
+npm install && npm run compile
+
+# Start Zaelot Developer Studio
+./scripts/code.sh
+```
+
+### After Installation
 1. **Configure Claude**: Set your API key via Command Palette → "Configure Claude API Key"
 2. **Open Chat**: Use `Ctrl+Shift+I` or click the chat icon to start conversations
 3. **Code with AI**: Select code and ask Claude for explanations or improvements
 4. **Get Help**: Use the built-in getting started guide
+
+### Prerequisites
+- Node.js 18+ ([Download](https://nodejs.org/))
+- Git ([Download](https://git-scm.com/))
+- Claude API Key ([Get yours](https://console.anthropic.com))
 
 ## For Internal Use Only
 
