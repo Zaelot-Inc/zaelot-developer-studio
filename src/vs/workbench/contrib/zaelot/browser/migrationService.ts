@@ -14,8 +14,7 @@ import { joinPath } from '../../../../base/common/resources.js';
 
 import { localize } from '../../../../nls.js';
 import { isWindows, isMacintosh } from '../../../../base/common/platform.js';
-import { homedir } from 'os';
-import { join } from 'path';
+
 import { IProgressService, ProgressLocation } from '../../../../platform/progress/common/progress.js';
 
 export const IMigrationService = createDecorator<IMigrationService>('migrationService');
@@ -51,11 +50,12 @@ export class MigrationService extends Disposable implements IMigrationService {
 	}
 
 	async detectInstallations(): Promise<IDetectedInstallation[]> {
+		// allow-any-unicode-next-line
 		this.logService.info('🔍 Detecting existing VS Code / Cursor installations...');
 		const installations: IDetectedInstallation[] = [];
 
-		// Get platform-specific paths
-		const homePath = homedir();
+		// Get platform-specific paths using environment variables
+		const homePath = this.getHomePath();
 		let candidates: Array<{ id: string; name: string; relativePath: string }> = [];
 
 		if (isWindows) {
@@ -84,8 +84,8 @@ export class MigrationService extends Disposable implements IMigrationService {
 		for (const candidate of candidates) {
 			try {
 				const userDataPath = candidate.relativePath;
-				const extensionsPath = isWindows 
-					? `${userDataPath}\\extensions` 
+				const extensionsPath = isWindows
+					? `${userDataPath}\\extensions`
 					: `${userDataPath}/extensions`;
 
 				// Check if the user data directory exists
@@ -102,14 +102,17 @@ export class MigrationService extends Disposable implements IMigrationService {
 				});
 
 				if (exists) {
+					// allow-any-unicode-next-line
 					this.logService.info(`✅ Found ${candidate.name} at: ${userDataPath}`);
 				}
 			} catch (error) {
+				// allow-any-unicode-next-line
 				this.logService.warn(`❌ Error checking ${candidate.name}:`, error);
 			}
 		}
 
 		const foundInstallations = installations.filter(i => i.exists);
+		// allow-any-unicode-next-line
 		this.logService.info(`🎯 Detected ${foundInstallations.length} existing installations.`);
 		return installations;
 	}
@@ -119,6 +122,7 @@ export class MigrationService extends Disposable implements IMigrationService {
 			throw new Error(`Installation ${installation.name} does not exist`);
 		}
 
+		// allow-any-unicode-next-line
 		this.logService.info(`🚀 Starting automatic migration from ${installation.name}`);
 
 		await this.progressService.withProgress({
@@ -126,12 +130,12 @@ export class MigrationService extends Disposable implements IMigrationService {
 			title: localize('migration.progress.title', 'Migrating from {0}', installation.name),
 			cancellable: false
 		}, async (progress) => {
-			
+
 			// Step 1: Copy settings
 			progress.report({ message: localize('migration.step.settings', 'Copying settings...'), increment: 20 });
 			await this.copySettings(installation);
 
-			// Step 2: Copy keybindings  
+			// Step 2: Copy keybindings
 			progress.report({ message: localize('migration.step.keybindings', 'Copying keybindings...'), increment: 20 });
 			await this.copyKeybindings(installation);
 
@@ -152,6 +156,7 @@ export class MigrationService extends Disposable implements IMigrationService {
 
 		this.notificationService.notify({
 			severity: Severity.Info,
+			// allow-any-unicode-next-line
 			message: localize('migration.success', '🎉 Successfully migrated from {0}! Please restart Zaelot Developer Studio to see all changes.', installation.name)
 		});
 	}
@@ -166,9 +171,11 @@ export class MigrationService extends Disposable implements IMigrationService {
 			if (await this.fileService.exists(sourceSettingsPath)) {
 				const settingsContent = await this.fileService.readFile(sourceSettingsPath);
 				await this.fileService.writeFile(targetSettingsPath, settingsContent.value);
+				// allow-any-unicode-next-line
 				this.logService.info('✅ Settings copied successfully');
 			}
 		} catch (error) {
+			// allow-any-unicode-next-line
 			this.logService.warn('⚠️ Failed to copy settings:', error);
 		}
 	}
@@ -182,9 +189,11 @@ export class MigrationService extends Disposable implements IMigrationService {
 			if (await this.fileService.exists(sourceKeybindingsPath)) {
 				const keybindingsContent = await this.fileService.readFile(sourceKeybindingsPath);
 				await this.fileService.writeFile(targetKeybindingsPath, keybindingsContent.value);
+				// allow-any-unicode-next-line
 				this.logService.info('✅ Keybindings copied successfully');
 			}
 		} catch (error) {
+			// allow-any-unicode-next-line
 			this.logService.warn('⚠️ Failed to copy keybindings:', error);
 		}
 	}
@@ -198,9 +207,11 @@ export class MigrationService extends Disposable implements IMigrationService {
 			if (await this.fileService.exists(sourceSnippetsPath)) {
 				// Copy entire snippets directory
 				await this.fileService.copy(sourceSnippetsPath, targetSnippetsPath, true);
+				// allow-any-unicode-next-line
 				this.logService.info('✅ Snippets copied successfully');
 			}
 		} catch (error) {
+			// allow-any-unicode-next-line
 			this.logService.warn('⚠️ Failed to copy snippets:', error);
 		}
 	}
@@ -209,17 +220,18 @@ export class MigrationService extends Disposable implements IMigrationService {
 		try {
 			// Read extensions list from source installation
 			const extensionsPath = joinPath(URI.file(installation.userDataPath), 'User', 'extensions.json');
-			
+
 			if (await this.fileService.exists(extensionsPath)) {
 				const extensionsContent = await this.fileService.readFile(extensionsPath);
-				
+
 				// Note: In a real implementation, you would iterate through
 				// the extensions and install them using extensionManagementService
 				// For now, we'll just copy the extensions.json file
 				const currentUserDataPath = this.calculateUserDataPath();
 				const targetExtensionsPath = joinPath(URI.file(currentUserDataPath), 'User', 'extensions.json');
 				await this.fileService.writeFile(targetExtensionsPath, extensionsContent.value);
-				
+
+				// allow-any-unicode-next-line
 				this.logService.info('✅ Extensions list copied successfully');
 			}
 
@@ -229,9 +241,11 @@ export class MigrationService extends Disposable implements IMigrationService {
 				// Note: Extensions path needs to come from environment service
 				// For now, we'll skip copying the full extensions directory
 				// as it requires more complex logic for extension compatibility
+				// allow-any-unicode-next-line
 				this.logService.info('📦 Extensions directory found - manual installation recommended');
 			}
 		} catch (error) {
+			// allow-any-unicode-next-line
 			this.logService.warn('⚠️ Failed to install extensions:', error);
 		}
 	}
@@ -241,7 +255,7 @@ export class MigrationService extends Disposable implements IMigrationService {
 			// Copy other useful files like tasks.json, launch.json, etc.
 			const filesToCopy = [
 				'globalStorage',
-				'workspaceStorage', 
+				'workspaceStorage',
 				'logs'
 			];
 
@@ -253,13 +267,16 @@ export class MigrationService extends Disposable implements IMigrationService {
 
 					if (await this.fileService.exists(sourcePath)) {
 						await this.fileService.copy(sourcePath, targetPath, true);
+						// allow-any-unicode-next-line
 						this.logService.info(`✅ Copied ${fileName} successfully`);
 					}
 				} catch (error) {
+					// allow-any-unicode-next-line
 					this.logService.warn(`⚠️ Failed to copy ${fileName}:`, error);
 				}
 			}
 		} catch (error) {
+			// allow-any-unicode-next-line
 			this.logService.warn('⚠️ Failed to copy other files:', error);
 		}
 	}
@@ -270,19 +287,30 @@ export class MigrationService extends Disposable implements IMigrationService {
 		// The actual migration logic is now in performAutomaticMigration
 	}
 
+	private getHomePath(): string {
+		// Get home directory using platform-specific environment variables
+		if (isWindows) {
+			return process.env.USERPROFILE ||
+				`${process.env.HOMEDRIVE || 'C:'}${process.env.HOMEPATH || '\\Users\\' + (process.env.USERNAME || 'user')}` ||
+				'';
+		} else {
+			return process.env.HOME || '';
+		}
+	}
+
 	private calculateUserDataPath(): string {
 		// Calculate Zaelot Developer Studio's user data path
-		const homePath = homedir();
-		
+		const homePath = this.getHomePath();
+
 		if (isWindows) {
-			const appData = process.env.APPDATA || join(homePath, 'AppData', 'Roaming');
-			return join(appData, 'Zaelot Developer Studio');
+			const appData = process.env.APPDATA || `${homePath}\\AppData\\Roaming`;
+			return `${appData}\\Zaelot Developer Studio`;
 		} else if (isMacintosh) {
-			return join(homePath, 'Library', 'Application Support', 'Zaelot Developer Studio');
+			return `${homePath}/Library/Application Support/Zaelot Developer Studio`;
 		} else {
 			// Linux
-			const configHome = process.env.XDG_CONFIG_HOME || join(homePath, '.config');
-			return join(configHome, 'Zaelot Developer Studio');
+			const configHome = process.env.XDG_CONFIG_HOME || `${homePath}/.config`;
+			return `${configHome}/Zaelot Developer Studio`;
 		}
 	}
 }

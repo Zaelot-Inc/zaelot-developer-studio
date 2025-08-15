@@ -37,6 +37,7 @@ class ImportFromOtherEditorsAction extends Action2 {
 			// First, detect available installations
 			notificationService.notify({
 				severity: Severity.Info,
+				// allow-any-unicode-next-line
 				message: localize('migration.detecting', '🔍 Detecting existing VS Code / Cursor installations...')
 			});
 
@@ -48,20 +49,15 @@ class ImportFromOtherEditorsAction extends Action2 {
 				const result = await dialogService.prompt({
 					type: Severity.Warning,
 					message: localize('migration.noInstallations.title', 'No VS Code/Cursor installations found'),
-					detail: localize('migration.noInstallations.detail', 
-						'We couldn\'t find any existing VS Code or Cursor installations on your system.\n\n' +
-						'If you have these editors installed in a custom location, you can:\n' +
-						'• Manually copy your settings\n' +
-						'• Install extensions from the marketplace\n' +
-						'• Configure Zaelot Developer Studio from scratch\n\n' +
-						'Would you like to browse extensions or open settings?'
-					),
+					detail: localize('migration.noInstallations.detail', 'No VS Code or Cursor installations found. Browse extensions or configure settings manually.'),
 					buttons: [
 						{
+							// allow-any-unicode-next-line
 							label: localize('openExtensions', '🔌 Browse Extensions'),
 							run: () => 'extensions'
 						},
 						{
+							// allow-any-unicode-next-line
 							label: localize('openSettings', '⚙️ Open Settings'),
 							run: () => 'settings'
 						}
@@ -83,39 +79,28 @@ class ImportFromOtherEditorsAction extends Action2 {
 				const installation = availableInstallations[0];
 				const result = await dialogService.prompt({
 					type: Severity.Info,
+					// allow-any-unicode-next-line
 					message: localize('migration.singleInstallation.title', '🎉 Found {0}!', installation.name),
-					detail: localize('migration.singleInstallation.detail', 
-						'We found your {0} installation with all your settings and extensions.\n\n' +
-						'✨ **Automatic Migration includes:**\n' +
-						'• All your settings and preferences\n' +
-						'• Custom keyboard shortcuts\n' +
-						'• Code snippets\n' +
-						'• Installed extensions\n' +
-						'• Workspace configurations\n\n' +
-						'This process is completely automatic and safe. Your original installation won\'t be modified.\n\n' +
-						'Would you like to start the automatic migration?', installation.name
-					),
+					detail: localize('migration.singleInstallation.detail', 'Found {0} installation. Migrate settings, extensions, and configurations automatically. Safe operation.', installation.name),
 					buttons: [
 						{
+							// allow-any-unicode-next-line
 							label: localize('startAutoMigration', '🚀 Start Automatic Migration'),
 							run: () => 'migrate'
 						},
 						{
+							// allow-any-unicode-next-line
 							label: localize('browseManually', '🔍 Browse Manually'),
 							run: () => 'manual'
 						}
 					],
-					cancelButton: localize('cancel', 'Skip Migration')
+					cancelButton: localize('skipMigration', 'Skip Migration')
 				});
 
 				if (result.result === 'migrate') {
 					await migrationService.performAutomaticMigration(installation);
 				} else if (result.result === 'manual') {
 					await commandService.executeCommand('workbench.view.extensions');
-					notificationService.notify({
-						severity: Severity.Info,
-						message: localize('manualBrowsing', '💡 Browse extensions and configure settings manually. Your {0} settings are at: {1}', installation.name, installation.userDataPath)
-					});
 				}
 			} else {
 				// Multiple installations found - let user choose
@@ -125,39 +110,35 @@ class ImportFromOtherEditorsAction extends Action2 {
 					installation: IDetectedInstallation;
 				}
 
-				const picks: InstallationPickItem[] = availableInstallations.map(installation => ({
-					label: `🚀 ${installation.name}`,
-					description: installation.userDataPath,
-					installation: installation
+				const pickItems: InstallationPickItem[] = availableInstallations.map(installation => ({
+					// allow-any-unicode-next-line
+					label: `🎯 ${installation.name}`,
+					description: installation.path,
+					installation
 				}));
 
-				const selectedPick = await quickInputService.pick(picks, {
-					title: localize('migration.multipleInstallations.title', 'Multiple editors found'),
-					placeHolder: localize('migration.multipleInstallations.placeholder', 'Select which installation to migrate from'),
+				const selectedPick = await quickInputService.pick(pickItems, {
+					// allow-any-unicode-next-line
+					title: localize('migration.multipleInstallations.title', '🎉 Multiple editors found!'),
+					// allow-any-unicode-next-line
+					placeHolder: localize('migration.multipleInstallations.placeholder', '✨ Choose which installation to migrate from'),
 					ignoreFocusLost: true
 				});
 
 				if (selectedPick) {
 					const result = await dialogService.prompt({
 						type: Severity.Info,
+						// allow-any-unicode-next-line
 						message: localize('migration.confirm.title', '🎉 Migrate from {0}?', selectedPick.installation.name),
-						detail: localize('migration.confirm.detail', 
-							'This will automatically copy all your settings, extensions, and configurations from {0}.\n\n' +
-							'✨ **What will be migrated:**\n' +
-							'• Settings and preferences\n' +
-							'• Keyboard shortcuts\n' +
-							'• Code snippets\n' +
-							'• Installed extensions\n' +
-							'• Other configurations\n\n' +
-							'This is completely safe and won\'t modify your original installation.', selectedPick.installation.name
-						),
+						detail: localize('migration.confirm.detail', 'Copy settings, extensions, and configurations from {0}. Safe operation.', selectedPick.installation.name),
 						buttons: [
 							{
+								// allow-any-unicode-next-line
 								label: localize('confirmMigration', '✅ Yes, Migrate Everything'),
 								run: () => 'migrate'
 							}
 						],
-						cancelButton: localize('cancel', 'Cancel')
+						cancelButton: localize('cancelMigration', 'Cancel')
 					});
 
 					if (result.result === 'migrate') {
@@ -165,11 +146,11 @@ class ImportFromOtherEditorsAction extends Action2 {
 					}
 				}
 			}
-
 		} catch (error) {
 			notificationService.notify({
 				severity: Severity.Error,
-				message: localize('migrationError', 'Migration service error: {0}', error)
+				// allow-any-unicode-next-line
+				message: localize('migration.error', '❌ Migration failed: {0}', String(error))
 			});
 		}
 	}
