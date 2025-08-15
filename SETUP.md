@@ -13,8 +13,8 @@
 ### 1. Clonar y Configurar
 
 ```bash
-git clone https://github.com/Zaelot-Inc/vscode.git
-cd vscode
+git clone https://github.com/Zaelot-Inc/zaelot-developer-studio.git
+cd zaelot-developer-studio
 npm install
 ```
 
