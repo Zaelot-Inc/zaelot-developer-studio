@@ -3,26 +3,32 @@
 ## Available Scripts
 
 ### install-zaelot.sh
+
 Auto-installer script for team members. Clones the repository, installs dependencies, builds the application, and creates shortcuts.
 
 **Usage:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Zaelot-Inc/zaelot-developer-studio/main/scripts/install-zaelot.sh | bash
 ```
 
 ### package-zaelot.sh
+
 Packaging script for creating distribution packages for different platforms.
 
 **Usage:**
+
 ```bash
 ./scripts/package-zaelot.sh [platform]
 # Platforms: darwin, win32, linux, all
 ```
 
 ### build-zaelot.sh
+
 Build script for development and production builds.
 
 **Usage:**
+
 ```bash
 ./scripts/build-zaelot.sh
 ./scripts/build-zaelot.sh --production
