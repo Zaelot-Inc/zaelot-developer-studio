@@ -147,11 +147,14 @@ class ImportFromOtherEditorsAction extends Action2 {
 				}
 			}
 		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error);
 			notificationService.notify({
 				severity: Severity.Error,
 				// allow-any-unicode-next-line
-				message: localize('migration.error', '❌ Migration failed: {0}', String(error))
+				message: localize('migration.error', '❌ Migration failed: {0}', errorMessage)
 			});
+			// Also log the full error for debugging
+			console.error('Migration error:', error);
 		}
 	}
 }

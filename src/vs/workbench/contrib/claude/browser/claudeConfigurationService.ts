@@ -51,7 +51,7 @@ export class ClaudeConfigurationService extends Disposable implements IClaudeCon
 		const stored = this._getStoredConfiguration();
 
 		return {
-			apiKey: settings.apiKey || stored.apiKey || process.env.CLAUDE_API_KEY || '',
+			apiKey: settings.apiKey || stored.apiKey || globalThis.process?.env?.CLAUDE_API_KEY || '',
 			baseUrl: settings.baseUrl || stored.baseUrl || 'https://api.anthropic.com',
 			model: settings.model || stored.model || 'claude-3-5-sonnet-20241022',
 			maxTokens: settings.maxTokens || stored.maxTokens || 4096,
