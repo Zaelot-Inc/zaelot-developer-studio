@@ -10,8 +10,9 @@ import { INotificationService, Severity } from '../../../../platform/notificatio
 import { IFileService } from '../../../../platform/files/common/files.js';
 import { URI } from '../../../../base/common/uri.js';
 import { joinPath } from '../../../../base/common/resources.js';
-import { IExtensionManagementService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
+import { IExtensionManagementService, IExtensionGalleryService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
 
 import { localize } from '../../../../nls.js';
 import { isWindows, isMacintosh } from '../../../../base/common/platform.js';
@@ -46,6 +47,7 @@ export class MigrationService extends Disposable implements IMigrationService {
 		@IFileService private readonly fileService: IFileService,
 		@IProgressService private readonly progressService: IProgressService,
 		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
+		@IExtensionGalleryService private readonly extensionGalleryService: IExtensionGalleryService,
 		@ICommandService private readonly commandService: ICommandService,
 	) {
 		super();
@@ -63,7 +65,7 @@ export class MigrationService extends Disposable implements IMigrationService {
 				name: 'Visual Studio Code',
 				path: '/Users/brunocerecetto/Library/Application Support/Code',
 				userDataPath: '/Users/brunocerecetto/Library/Application Support/Code',
-				extensionsPath: '/Users/brunocerecetto/Library/Application Support/Code/extensions',
+				extensionsPath: '/Users/brunocerecetto/.vscode/extensions',
 				exists: true // Force it to true for testing
 			},
 			{
@@ -71,7 +73,7 @@ export class MigrationService extends Disposable implements IMigrationService {
 				name: 'Cursor',
 				path: '/Users/brunocerecetto/Library/Application Support/Cursor',
 				userDataPath: '/Users/brunocerecetto/Library/Application Support/Cursor',
-				extensionsPath: '/Users/brunocerecetto/Library/Application Support/Cursor/extensions',
+				extensionsPath: '/Users/brunocerecetto/.cursor/extensions',
 				exists: true // Force it to true for testing
 			}
 		];
@@ -145,15 +147,43 @@ export class MigrationService extends Disposable implements IMigrationService {
 	private async copySettings(installation: IDetectedInstallation): Promise<void> {
 		try {
 			const sourceSettingsPath = joinPath(URI.file(installation.userDataPath), 'User', 'settings.json');
-			// Calculate our app's user data path (simplified approach)
 			const currentUserDataPath = this.calculateUserDataPath();
+
+			// Ensure User directory exists first
+			const userDir = joinPath(URI.file(currentUserDataPath), 'User');
+			try {
+				await this.fileService.createFolder(userDir);
+			} catch (e) {
+				// Directory might already exist, that's fine
+			}
+
 			const targetSettingsPath = joinPath(URI.file(currentUserDataPath), 'User', 'settings.json');
 
 			if (await this.fileService.exists(sourceSettingsPath)) {
 				const settingsContent = await this.fileService.readFile(sourceSettingsPath);
 				await this.fileService.writeFile(targetSettingsPath, settingsContent.value);
+
+				// Log details about what settings we copied for debugging
+				try {
+					const settingsObj = JSON.parse(settingsContent.value.toString());
+					const settingsKeys = Object.keys(settingsObj);
+					// allow-any-unicode-next-line
+					this.logService.info(`✅ Settings copied successfully (${settingsKeys.length} settings): ${settingsKeys.slice(0, 5).join(', ')}${settingsKeys.length > 5 ? '...' : ''}`);
+
+					// Log important theme/appearance settings
+					const importantSettings = ['workbench.colorTheme', 'workbench.iconTheme', 'editor.fontFamily', 'editor.fontSize'];
+					const foundImportant = importantSettings.filter(key => settingsObj[key] !== undefined);
+					if (foundImportant.length > 0) {
+						// allow-any-unicode-next-line
+						this.logService.info(`🎨 Theme/appearance settings found: ${foundImportant.join(', ')}`);
+					}
+				} catch (parseError) {
+					// allow-any-unicode-next-line
+					this.logService.warn('Could not parse settings for logging, but file was copied');
+				}
+			} else {
 				// allow-any-unicode-next-line
-				this.logService.info('✅ Settings copied successfully');
+				this.logService.warn(`Settings file not found at: ${sourceSettingsPath.fsPath}`);
 			}
 		} catch (error) {
 			// allow-any-unicode-next-line
@@ -199,38 +229,67 @@ export class MigrationService extends Disposable implements IMigrationService {
 
 	private async installExtensions(installation: IDetectedInstallation): Promise<void> {
 		try {
-			// First copy the extensions.json file
-			const extensionsPath = joinPath(URI.file(installation.userDataPath), 'User', 'extensions.json');
+			// Look for extensions.json in the extensions directory, not in User folder
+			const extensionsJsonPath = joinPath(URI.file(installation.extensionsPath), 'extensions.json');
 
-			if (await this.fileService.exists(extensionsPath)) {
-				const extensionsContent = await this.fileService.readFile(extensionsPath);
-				const currentUserDataPath = this.calculateUserDataPath();
-				const targetExtensionsPath = joinPath(URI.file(currentUserDataPath), 'User', 'extensions.json');
-				await this.fileService.writeFile(targetExtensionsPath, extensionsContent.value);
+			// allow-any-unicode-next-line
+			this.logService.info(`Looking for extensions at: ${extensionsJsonPath.fsPath}`);
 
-				// Parse extensions list and install them
+			if (await this.fileService.exists(extensionsJsonPath)) {
+				const extensionsContent = await this.fileService.readFile(extensionsJsonPath);
+
+				// Parse the complex extensions JSON structure
 				try {
 					const extensionsData = JSON.parse(extensionsContent.value.toString());
 					// allow-any-unicode-next-line
-					this.logService.info(`Found ${extensionsData.recommendations?.length || 0} recommended extensions`);
+					this.logService.info(`Found ${extensionsData.length || 0} installed extensions`);
 
-					if (extensionsData.recommendations && extensionsData.recommendations.length > 0) {
-						for (const extensionId of extensionsData.recommendations) {
+					if (Array.isArray(extensionsData) && extensionsData.length > 0) {
+						for (const extension of extensionsData) {
 							try {
+								const extensionId = extension.identifier?.id;
+								if (!extensionId) {
+									continue;
+								}
+
 								// allow-any-unicode-next-line
 								this.logService.info(`Installing extension: ${extensionId}`);
 
-								// Install extension from marketplace
-								await this.extensionManagementService.installFromGallery({
-									identifier: { id: extensionId },
-									version: undefined
-								} as any);
+								// Check if already installed first
+								const installedExtensions = await this.extensionManagementService.getInstalled();
+								const alreadyInstalled = installedExtensions.find(ext =>
+									ext.identifier.id.toLowerCase() === extensionId.toLowerCase()
+								);
 
-								// allow-any-unicode-next-line
-								this.logService.info(`✅ Successfully installed: ${extensionId}`);
+								if (alreadyInstalled) {
+									// allow-any-unicode-next-line
+									this.logService.info(`⚪ Extension already installed: ${extensionId}`);
+									continue;
+								}
+
+								// Search for extension in gallery
+								const queryResult = await this.extensionGalleryService.query({
+									text: extensionId,
+									pageSize: 1
+								}, CancellationToken.None);
+
+								if (queryResult.firstPage.length > 0) {
+									const galleryExtension = queryResult.firstPage[0];
+									try {
+										await this.extensionManagementService.installFromGallery(galleryExtension);
+										// allow-any-unicode-next-line
+										this.logService.info(`✅ Successfully installed: ${extensionId}`);
+									} catch (installError) {
+										// allow-any-unicode-next-line
+										this.logService.warn(`❌ Installation failed for ${extensionId}:`, installError);
+									}
+								} else {
+									// allow-any-unicode-next-line
+									this.logService.warn(`❌ Extension not found in marketplace: ${extensionId}`);
+								}
 							} catch (extensionError) {
 								// allow-any-unicode-next-line
-								this.logService.warn(`❌ Failed to install ${extensionId}:`, extensionError);
+								this.logService.warn(`❌ Failed to install ${extension.identifier?.id || 'unknown'}:`, extensionError);
 							}
 						}
 					}
@@ -241,13 +300,16 @@ export class MigrationService extends Disposable implements IMigrationService {
 
 				// allow-any-unicode-next-line
 				this.logService.info('✅ Extensions migration completed');
+			} else {
+				// allow-any-unicode-next-line
+				this.logService.warn(`Extensions file not found at: ${extensionsJsonPath.fsPath}`);
 			}
 
-			// Also try to copy the full extensions directory for faster loading
+			// Also log the extensions directory status
 			const sourceExtensionsDir = URI.file(installation.extensionsPath);
 			if (await this.fileService.exists(sourceExtensionsDir)) {
 				// allow-any-unicode-next-line
-				this.logService.info('📦 Extensions directory found - using marketplace installation for compatibility');
+				this.logService.info('📦 Extensions directory found - proceeding with marketplace installation');
 			}
 		} catch (error) {
 			// allow-any-unicode-next-line
