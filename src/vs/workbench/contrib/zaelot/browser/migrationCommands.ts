@@ -29,10 +29,10 @@ class ImportFromOtherEditorsAction extends Action2 {
 
 		try {
 			await migrationService.showMigrationInfo();
-			
+
 			notificationService.notify({
 				severity: Severity.Info,
-				message: localize('migrationInfo', 
+				message: localize('migrationInfo',
 					'Migration guide available! Check MIGRATION.md in the project root for detailed instructions.'
 				)
 			});
