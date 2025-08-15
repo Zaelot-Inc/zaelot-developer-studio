@@ -34,39 +34,52 @@ class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContri
 	}
 
 	private async _initialize(): Promise<void> {
-		// Initialize Claude API client with current configuration
-		this._updateClaudeConfiguration();
-
-		// Listen for configuration changes
-		this._register(this.claudeConfigurationService.onDidChangeConfiguration(() => {
+		try {
+			// Initialize Claude API client with current configuration
 			this._updateClaudeConfiguration();
-		}));
 
-		// Register Claude language model provider
-		this._registerClaudeProvider();
+			// Listen for configuration changes
+			this._register(this.claudeConfigurationService.onDidChangeConfiguration(() => {
+				this._updateClaudeConfiguration();
+			}));
 
-		this.logService.info('Claude integration initialized');
+			// Register Claude language model provider
+			this._registerClaudeProvider();
+
+			this.logService.info('Claude integration initialized');
+		} catch (error) {
+			// Claude initialization failed, but don't break the application
+			this.logService.warn('Claude integration failed to initialize, but application will continue without Claude:', error);
+		}
 	}
 
 	private _updateClaudeConfiguration(): void {
-		const config = this.claudeConfigurationService.getConfiguration();
-		this.claudeApiClient.configure(config);
+		try {
+			const config = this.claudeConfigurationService.getConfiguration();
+			this.claudeApiClient.configure(config);
+		} catch (error) {
+			this.logService.warn('Failed to update Claude configuration:', error);
+		}
 	}
 
 	private _registerClaudeProvider(): void {
-		if (this.claudeProvider) {
-			this.claudeProvider.dispose();
+		try {
+			if (this.claudeProvider) {
+				this.claudeProvider.dispose();
+			}
+
+			this.claudeProvider = new ClaudeLanguageModelProvider(
+				this.claudeApiClient,
+				this.logService
+			);
+
+			// Register with the language models service
+			this._register(this.languageModelsService.registerLanguageModelProvider('claude', this.claudeProvider));
+
+			this.logService.info('Claude language model provider registered');
+		} catch (error) {
+			this.logService.warn('Failed to register Claude language model provider:', error);
 		}
-
-		this.claudeProvider = new ClaudeLanguageModelProvider(
-			this.claudeApiClient,
-			this.logService
-		);
-
-		// Register with the language models service
-		this._register(this.languageModelsService.registerLanguageModelProvider('claude', this.claudeProvider));
-
-		this.logService.info('Claude language model provider registered');
 	}
 }
 
