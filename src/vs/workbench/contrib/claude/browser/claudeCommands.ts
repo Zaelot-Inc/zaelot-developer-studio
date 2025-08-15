@@ -6,11 +6,11 @@
 import { localize } from '../../../../nls.js';
 import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
 import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
-import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { IClaudeConfigurationService } from './claudeConfigurationService.js';
 import { IClaudeApiClient } from '../common/claudeApiClient.js';
-import { Categories } from '../../../common/actions.js';
+import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
 
 class ConfigureClaudeApiKeyAction extends Action2 {
 	static readonly ID = 'claude.configureApiKey';
@@ -19,7 +19,7 @@ class ConfigureClaudeApiKeyAction extends Action2 {
 	constructor() {
 		super({
 			id: ConfigureClaudeApiKeyAction.ID,
-			title: ConfigureClaudeApiKeyAction.LABEL,
+			title: { value: ConfigureClaudeApiKeyAction.LABEL, original: 'Configure Claude API Key' },
 			category: Categories.Help,
 			f1: true
 		});
@@ -37,7 +37,7 @@ class ConfigureClaudeApiKeyAction extends Action2 {
 			prompt: localize('claude.apiKeyPrompt', 'Enter your Claude API key from console.anthropic.com'),
 			value: currentConfig.apiKey ? '••••••••••••••••' : '',
 			password: true,
-			validateInput: (value) => {
+			validateInput: async (value) => {
 				if (!value || value === '••••••••••••••••') {
 					return localize('claude.apiKeyRequired', 'API key is required');
 				}
@@ -66,7 +66,7 @@ class TestClaudeConnectionAction extends Action2 {
 	constructor() {
 		super({
 			id: TestClaudeConnectionAction.ID,
-			title: TestClaudeConnectionAction.LABEL,
+			title: { value: TestClaudeConnectionAction.LABEL, original: 'Test Claude Connection' },
 			category: Categories.Help,
 			f1: true
 		});
@@ -83,7 +83,7 @@ class TestClaudeConnectionAction extends Action2 {
 
 		try {
 			const notification = notificationService.notify({
-				severity: 'info',
+				severity: Severity.Info,
 				message: localize('claude.testingConnection', 'Testing Claude connection...'),
 				progress: {
 					infinite: true
