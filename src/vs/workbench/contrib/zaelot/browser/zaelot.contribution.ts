@@ -87,6 +87,12 @@ class ZaelotWorkbenchContribution extends Disposable implements IWorkbenchContri
 		if (welcomeContainer && !welcomeContainer.classList.contains('zaelot-enhanced')) {
 			welcomeContainer.classList.add('zaelot-enhanced');
 
+			// Remove any existing zaelot branding to prevent duplicates
+			const existingBranding = welcomeContainer.querySelector('.zaelot-branding');
+			if (existingBranding) {
+				existingBranding.remove();
+			}
+
 			// Add Zaelot branding to welcome page
 			const brandingDiv = mainWindow.document.createElement('div');
 			brandingDiv.className = 'zaelot-branding';
@@ -97,7 +103,14 @@ class ZaelotWorkbenchContribution extends Disposable implements IWorkbenchContri
 
 			const logoDiv = mainWindow.document.createElement('div');
 			logoDiv.className = 'zaelot-logo';
+
+			// For now, use styled Z as logo since SVG path needs to be fixed
 			logoDiv.textContent = 'Z';
+			logoDiv.style.background = 'linear-gradient(135deg, var(--zaelot-zaelow) 0%, var(--zaelot-zaelow-30) 100%)';
+			logoDiv.style.color = 'var(--zaelot-thunder)';
+			logoDiv.style.fontWeight = 'bold';
+			logoDiv.style.fontSize = '20px';
+			logoDiv.style.borderRadius = '50%';
 
 			const textContainer = mainWindow.document.createElement('div');
 
