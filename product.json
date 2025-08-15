@@ -5,8 +5,8 @@
 	"dataFolderName": ".zaelot-dev-studio",
 	"win32MutexName": "zaelotdevstudio",
 	"licenseName": "MIT",
-	"licenseUrl": "https://github.com/Zaelot-Inc/vscode/blob/main/LICENSE.txt",
-	"serverLicenseUrl": "https://github.com/Zaelot-Inc/vscode/blob/main/LICENSE.txt",
+			"licenseUrl": "https://github.com/Zaelot-Inc/zaelot-developer-studio/blob/main/LICENSE.txt",
+		"serverLicenseUrl": "https://github.com/Zaelot-Inc/zaelot-developer-studio/blob/main/LICENSE.txt",
 	"serverGreeting": [
 		"Welcome to Zaelot Developer Studio",
 		"Your AI-powered development environment"
@@ -35,7 +35,7 @@
 	"darwinProfilePayloadUUID": "23456789-2345-6789-ABCD-234567890123",
 	"linuxIconName": "zaelot-dev-studio",
 	"licenseFileName": "LICENSE.txt",
-	"reportIssueUrl": "https://github.com/Zaelot-Inc/vscode/issues/new",
+			"reportIssueUrl": "https://github.com/Zaelot-Inc/zaelot-developer-studio/issues/new",
 	"nodejsRepository": "https://nodejs.org",
 	"urlProtocol": "zaelot-dev-studio",
 	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/",
