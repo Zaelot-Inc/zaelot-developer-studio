@@ -1,6 +1,6 @@
 {
 	"nameShort": "Zaelot Developer Studio",
-	"nameLong": "Zaelot Developer Studio - Powered by Claude AI",
+	"nameLong": "Zaelot Developer Studio",
 	"applicationName": "zaelot-dev-studio",
 	"dataFolderName": ".zaelot-dev-studio",
 	"win32MutexName": "zaelotdevstudio",
