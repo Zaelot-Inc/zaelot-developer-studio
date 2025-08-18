@@ -93,43 +93,7 @@ class ZaelotWorkbenchContribution extends Disposable implements IWorkbenchContri
 				existingBranding.remove();
 			}
 
-			// Add Zaelot branding to welcome page
-			const brandingDiv = mainWindow.document.createElement('div');
-			brandingDiv.className = 'zaelot-branding';
-
-			// Create header structure with DOM elements instead of innerHTML
-			const headerDiv = mainWindow.document.createElement('div');
-			headerDiv.className = 'zaelot-welcome-header';
-
-			const logoDiv = mainWindow.document.createElement('div');
-			logoDiv.className = 'zaelot-logo';
-
-			// For now, use styled Z as logo since SVG path needs to be fixed
-			logoDiv.textContent = 'Z';
-			logoDiv.style.background = 'linear-gradient(135deg, var(--zaelot-zaelow) 0%, var(--zaelot-zaelow-30) 100%)';
-			logoDiv.style.color = 'var(--zaelot-thunder)';
-			logoDiv.style.fontWeight = 'bold';
-			logoDiv.style.fontSize = '20px';
-			logoDiv.style.borderRadius = '50%';
-
-			const textContainer = mainWindow.document.createElement('div');
-
-			const title = mainWindow.document.createElement('h1');
-			title.className = 'zaelot-welcome-title';
-			title.textContent = 'Zaelot Developer Studio';
-
-			const subtitle = mainWindow.document.createElement('p');
-			subtitle.className = 'zaelot-welcome-subtitle';
-			subtitle.textContent = 'Powered by Claude AI';
-
-			textContainer.appendChild(title);
-			textContainer.appendChild(subtitle);
-			headerDiv.appendChild(logoDiv);
-			headerDiv.appendChild(textContainer);
-			brandingDiv.appendChild(headerDiv);
-
-			// Insert at the beginning of welcome container
-			welcomeContainer.insertBefore(brandingDiv, welcomeContainer.firstChild);
+			// Zaelot branding removed from welcome page
 		}
 	}
 

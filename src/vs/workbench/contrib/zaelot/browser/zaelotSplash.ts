@@ -75,10 +75,7 @@ export class ZaelotSplashService extends Disposable {
 		titleDiv.className = 'zaelot-splash-title';
 		const title = mainWindow.document.createElement('h1');
 		title.textContent = 'Zaelot Developer Studio';
-		const subtitle = mainWindow.document.createElement('p');
-		subtitle.textContent = 'Powered by Claude AI';
 		titleDiv.appendChild(title);
-		titleDiv.appendChild(subtitle);
 
 		// Loading section
 		const loadingDiv = mainWindow.document.createElement('div');
