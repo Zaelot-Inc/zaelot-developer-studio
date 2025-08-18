@@ -87,36 +87,13 @@ class ZaelotWorkbenchContribution extends Disposable implements IWorkbenchContri
 		if (welcomeContainer && !welcomeContainer.classList.contains('zaelot-enhanced')) {
 			welcomeContainer.classList.add('zaelot-enhanced');
 
-			// Add Zaelot branding to welcome page
-			const brandingDiv = mainWindow.document.createElement('div');
-			brandingDiv.className = 'zaelot-branding';
+			// Remove any existing zaelot branding to prevent duplicates
+			const existingBranding = welcomeContainer.querySelector('.zaelot-branding');
+			if (existingBranding) {
+				existingBranding.remove();
+			}
 
-			// Create header structure with DOM elements instead of innerHTML
-			const headerDiv = mainWindow.document.createElement('div');
-			headerDiv.className = 'zaelot-welcome-header';
-
-			const logoDiv = mainWindow.document.createElement('div');
-			logoDiv.className = 'zaelot-logo';
-			logoDiv.textContent = 'Z';
-
-			const textContainer = mainWindow.document.createElement('div');
-
-			const title = mainWindow.document.createElement('h1');
-			title.className = 'zaelot-welcome-title';
-			title.textContent = 'Zaelot Developer Studio';
-
-			const subtitle = mainWindow.document.createElement('p');
-			subtitle.className = 'zaelot-welcome-subtitle';
-			subtitle.textContent = 'Powered by Claude AI';
-
-			textContainer.appendChild(title);
-			textContainer.appendChild(subtitle);
-			headerDiv.appendChild(logoDiv);
-			headerDiv.appendChild(textContainer);
-			brandingDiv.appendChild(headerDiv);
-
-			// Insert at the beginning of welcome container
-			welcomeContainer.insertBefore(brandingDiv, welcomeContainer.firstChild);
+			// Zaelot branding removed from welcome page
 		}
 	}
 

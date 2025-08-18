@@ -53,15 +53,21 @@ export class ZaelotSplashService extends Disposable {
 		const contentDiv = mainWindow.document.createElement('div');
 		contentDiv.className = 'zaelot-splash-content';
 
-		// Logo section
+		// Logo section with official Zaelot SVG
 		const logoDiv = mainWindow.document.createElement('div');
 		logoDiv.className = 'zaelot-splash-logo';
 		const logoCircle = mainWindow.document.createElement('div');
 		logoCircle.className = 'zaelot-logo-circle';
+
+		// For now, use styled Z as logo since SVG path needs to be fixed
 		const logoText = mainWindow.document.createElement('span');
 		logoText.className = 'zaelot-logo-text';
 		logoText.textContent = 'Z';
+		logoText.style.fontSize = '36px';
+		logoText.style.fontWeight = 'bold';
+		logoText.style.color = 'var(--zaelot-thunder)';
 		logoCircle.appendChild(logoText);
+		logoCircle.style.background = 'linear-gradient(135deg, var(--zaelot-zaelow) 0%, var(--zaelot-zaelow-30) 100%)';
 		logoDiv.appendChild(logoCircle);
 
 		// Title section
@@ -69,10 +75,7 @@ export class ZaelotSplashService extends Disposable {
 		titleDiv.className = 'zaelot-splash-title';
 		const title = mainWindow.document.createElement('h1');
 		title.textContent = 'Zaelot Developer Studio';
-		const subtitle = mainWindow.document.createElement('p');
-		subtitle.textContent = 'Powered by Claude AI';
 		titleDiv.appendChild(title);
-		titleDiv.appendChild(subtitle);
 
 		// Loading section
 		const loadingDiv = mainWindow.document.createElement('div');
@@ -92,6 +95,7 @@ export class ZaelotSplashService extends Disposable {
 		const footerDiv = mainWindow.document.createElement('div');
 		footerDiv.className = 'zaelot-splash-footer';
 		const footerText = mainWindow.document.createElement('p');
+		// allow-any-unicode-next-line
 		footerText.textContent = '© 2025 Zaelot Inc. All rights reserved.';
 		footerDiv.appendChild(footerText);
 

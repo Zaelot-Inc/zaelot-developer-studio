@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+    <linearGradient id="zaelotGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#211E20;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2A2628;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F3E060;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FBF6CF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#zaelotGradient)" stroke="#F3E060" stroke-width="2"/>
+
+  <!-- Letter Z -->
+  <path d="M 32 36 L 96 36 L 96 44 L 42 44 L 96 84 L 96 92 L 32 92 L 32 84 L 86 84 L 32 44 Z"
+        fill="url(#accentGradient)"
+        stroke="#F3E060"
+        stroke-width="1"/>
+
+  <!-- Subtle Code Brackets -->
+  <path d="M 20 50 L 16 54 L 20 58"
+        fill="none"
+        stroke="#60BDF3"
+        stroke-width="2"
+        stroke-linecap="round"
+        opacity="0.8"/>
+  <path d="M 108 50 L 112 54 L 108 58"
+        fill="none"
+        stroke="#60BDF3"
+        stroke-width="2"
+        stroke-linecap="round"
+        opacity="0.8"/>
+
+  <!-- AI Accent Dots -->
+  <circle cx="48" cy="104" r="3" fill="#6154BD" opacity="0.8"/>
+  <circle cx="64" cy="108" r="2" fill="#6154BD" opacity="0.6"/>
+  <circle cx="80" cy="104" r="3" fill="#6154BD" opacity="0.8"/>
+</svg>

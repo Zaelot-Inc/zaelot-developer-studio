@@ -1,0 +1,224 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/* Import Zaelot Brand Colors */
+@import url("../../../../../../../../resources/branding/zaelot-brand-colors.css");
+
+/* Zaelot Branding Styles */
+.zaelot-branding {
+	display: flex;
+	align-items: center;
+	margin: 20px 0;
+	padding: 20px;
+	background: linear-gradient(
+		135deg,
+		var(--zaelot-thunder) 0%,
+		var(--zaelot-bg-secondary) 100%
+	);
+	border-radius: 8px;
+	border: 1px solid var(--zaelot-zaelow-30);
+}
+
+.zaelot-welcome-header {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+}
+
+.zaelot-logo {
+	width: 48px;
+	height: 48px;
+	background: linear-gradient(135deg, var(--zaelot-zaelow) 0%, var(--zaelot-zaelow-30) 100%);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--zaelot-thunder);
+	font-weight: bold;
+	font-size: 20px;
+	box-shadow: 0 4px 12px rgba(243, 224, 96, 0.3);
+}
+
+.zaelot-logo img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.zaelot-welcome-title {
+	font-size: 24px;
+	font-weight: 600;
+	color: var(--zaelot-alabaster);
+	margin: 0;
+}
+
+.zaelot-welcome-subtitle {
+	font-size: 14px;
+	color: var(--zaelot-mercury);
+	margin: 4px 0 0 0;
+}
+
+/* Status Bar Styling */
+.zaelot-claude-status {
+	background: var(--zaelot-thunder) !important;
+	border: 1px solid var(--zaelot-zaelow-30);
+	border-radius: 4px;
+	padding: 4px 8px;
+}
+
+.zaelot-status-connected {
+	color: var(--zaelot-zaelow);
+	font-weight: 500;
+	font-size: 11px;
+}
+
+/* Splash Screen Styles */
+.zaelot-splash {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(
+		135deg,
+		var(--zaelot-thunder) 0%,
+		var(--zaelot-bg-secondary) 100%
+	);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10000;
+}
+
+.zaelot-splash-content {
+	text-align: center;
+	color: var(--zaelot-alabaster);
+}
+
+.zaelot-splash-logo {
+	margin-bottom: 30px;
+}
+
+.zaelot-logo-circle {
+	width: 80px;
+	height: 80px;
+	background: linear-gradient(135deg, var(--zaelot-zaelow) 0%, var(--zaelot-zaelow-30) 100%);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto;
+	box-shadow: 0 8px 24px rgba(243, 224, 96, 0.4);
+}
+
+.zaelot-logo-text {
+	font-size: 36px;
+	font-weight: bold;
+	color: var(--zaelot-thunder);
+}
+
+.zaelot-splash-title h1 {
+	font-size: 32px;
+	font-weight: 600;
+	margin: 0 0 8px 0;
+	color: var(--zaelot-alabaster);
+}
+
+.zaelot-splash-title p {
+	font-size: 16px;
+	color: var(--zaelot-mercury);
+	margin: 0 0 40px 0;
+}
+
+.zaelot-splash-loading {
+	margin-bottom: 40px;
+}
+
+.zaelot-loading-bar {
+	width: 200px;
+	height: 4px;
+	background: var(--zaelot-bg-tertiary);
+	border-radius: 2px;
+	margin: 0 auto 15px auto;
+	overflow: hidden;
+}
+
+.zaelot-loading-progress {
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(
+		90deg,
+		var(--zaelot-zaelow) 0%,
+		var(--zaelot-cielo-blue) 100%
+	);
+	animation: loading 2s ease-in-out infinite;
+}
+
+@keyframes loading {
+	0% {
+		transform: translateX(-100%);
+	}
+	50% {
+		transform: translateX(0%);
+	}
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+.zaelot-loading-text {
+	font-size: 14px;
+	color: var(--zaelot-dove-gray);
+	margin: 0;
+}
+
+.zaelot-splash-footer {
+	font-size: 12px;
+	color: var(--zaelot-dove-gray);
+}
+
+.zaelot-splash-footer p {
+	margin: 0;
+}
+
+/* Button Styling */
+.zaelot-button {
+	background: var(--zaelot-zaelow);
+	color: var(--zaelot-thunder);
+	border: none;
+	padding: 8px 16px;
+	border-radius: 4px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.zaelot-button:hover {
+	background: var(--zaelot-zaelow-30);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(243, 224, 96, 0.3);
+}
+
+/* Migration Page Styling */
+.zaelot-migration-container {
+	background: var(--zaelot-bg-secondary);
+	border: 1px solid var(--zaelot-zaelow-30);
+	border-radius: 8px;
+	padding: 20px;
+	margin: 20px 0;
+}
+
+.zaelot-migration-header {
+	color: var(--zaelot-zaelow);
+	font-size: 18px;
+	font-weight: 600;
+	margin-bottom: 15px;
+}
+
+.zaelot-migration-description {
+	color: var(--zaelot-mercury);
+	margin-bottom: 20px;
+	line-height: 1.5;
+}
