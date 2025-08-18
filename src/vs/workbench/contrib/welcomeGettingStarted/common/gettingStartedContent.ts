@@ -11,7 +11,9 @@ import { Codicon } from '../../../../base/common/codicons.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
 import { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';
 import { NotebookSetting } from '../../notebook/common/notebookCommon.js';
-import { CONTEXT_ACCESSIBILITY_MODE_ENABLED } from '../../../../platform/accessibility/common/accessibility.js';
+import {
+	CONTEXT_ACCESSIBILITY_MODE_ENABLED
+} from '../../../../platform/accessibility/common/accessibility.js';
 import { URI } from '../../../../base/common/uri.js';
 import product from '../../../../platform/product/common/product.js';
 
@@ -26,7 +28,10 @@ const defaultChat = {
 	publicCodeMatchesUrl: product.defaultChatAgent?.publicCodeMatchesUrl ?? '',
 };
 
-export const copilotSettingsMessage = localize({ key: 'settings', comment: ['{Locked="["}', '{Locked="]({0})"}', '{Locked="]({1})"}'] }, "{0} Copilot Free, Pro and Pro+ may show [public code]({1}) suggestions and we may use your data for product improvement. You can change these [settings]({2}) at any time.", defaultChat.provider.default.name, defaultChat.publicCodeMatchesUrl, defaultChat.manageSettingsUrl);
+export const copilotSettingsMessage = localize({
+	key: 'settings',
+	comment: ['{Locked="["}', '{Locked="]({0})"}', '{Locked="]({1})"}']
+}, "{0} Copilot Free, Pro and Pro+ may show [public code]({1}) suggestions and we may use your data for product improvement. You can change these [settings]({2}) at any time.", defaultChat.provider.default.name, defaultChat.publicCodeMatchesUrl, defaultChat.manageSettingsUrl);
 
 class GettingStartedContentProviderRegistry {
 
@@ -40,6 +45,7 @@ class GettingStartedContentProviderRegistry {
 		return this.providers.get(moduleId);
 	}
 }
+
 export const gettingStartedContentRegistry = new GettingStartedContentProviderRegistry();
 
 export async function moduleToContent(resource: URI): Promise<string> {
@@ -77,10 +83,19 @@ export type BuiltinGettingStartedStep = {
 	completionEvents?: string[];
 	when?: string;
 	media:
-	| { type: 'image'; path: string | { hc: string; hcLight?: string; light: string; dark: string }; altText: string }
+	| {
+		type: 'image';
+		path: string | { hc: string; hcLight?: string; light: string; dark: string };
+		altText: string;
+	}
 	| { type: 'svg'; path: string; altText: string }
 	| { type: 'markdown'; path: string }
-	| { type: 'video'; path: string | { hc: string; hcLight?: string; light: string; dark: string }; poster?: string | { hc: string; hcLight?: string; light: string; dark: string }; altText: string };
+	| {
+		type: 'video';
+		path: string | { hc: string; hcLight?: string; light: string; dark: string };
+		poster?: string | { hc: string; hcLight?: string; light: string; dark: string };
+		altText: string;
+	};
 };
 
 export type BuiltinGettingStartedCategory = {
@@ -112,7 +127,7 @@ type GettingStartedStartEntryContent = BuiltinGettingStartedStartEntry[];
 export const startEntries: GettingStartedStartEntryContent = [
 	{
 		id: 'migration.quickStart',
-		title: localize('gettingStarted.migration.quickStart.title', "🚀 Migrate from VS Code / Cursor"),
+		title: localize('gettingStarted.migration.quickStart.title', "🚀 Migrate from VS Code / Cursor"), // allow-any-unicode-next-line
 		description: localize('gettingStarted.migration.quickStart.description', "Import your extensions, settings, and configurations in just a few clicks!"),
 		icon: Codicon.arrowSwap,
 		content: {
@@ -122,12 +137,12 @@ export const startEntries: GettingStartedStartEntryContent = [
 	},
 	{
 		id: 'claude.openChat',
-		title: localize('gettingStarted.claude.title', "💬 Chat with Claude AI"),
+		title: localize('gettingStarted.claude.title', "💬 Chat with Claude AI"), // allow-any-unicode-next-line
 		description: localize('gettingStarted.claude.description', "Start a conversation with Claude AI to get help with your code."),
 		icon: Codicon.commentDiscussion,
 		content: {
 			type: 'startEntry',
-			command: 'command:workbench.panel.chat.view.open',
+			command: 'command:workbench.action.chat.open',
 		}
 	},
 	{
@@ -244,7 +259,10 @@ export const startEntries: GettingStartedStartEntryContent = [
 const Button = (title: string, href: string) => `[${title}](${href})`;
 
 const CopilotStepTitle = localize('gettingStarted.copilotSetup.title', "Use AI features with Copilot for free");
-const CopilotDescription = localize({ key: 'gettingStarted.copilotSetup.description', comment: ['{Locked="["}', '{Locked="]({0})"}'] }, "You can use [Copilot]({0}) to generate code across multiple files, fix errors, ask questions about your code and much more using natural language.", defaultChat.documentationUrl ?? '');
+const CopilotDescription = localize({
+	key: 'gettingStarted.copilotSetup.description',
+	comment: ['{Locked="["}', '{Locked="]({0})"}']
+}, "You can use [Copilot]({0}) to generate code across multiple files, fix errors, ask questions about your code and much more using natural language.", defaultChat.documentationUrl ?? '');
 const CopilotSignedOutButton = Button(localize('setupCopilotButton.signIn', "Set up Copilot"), `command:workbench.action.chat.triggerSetup`);
 const CopilotSignedInButton = Button(localize('setupCopilotButton.setup', "Set up Copilot"), `command:workbench.action.chat.triggerSetup`);
 const CopilotCompleteButton = Button(localize('setupCopilotButton.chatWithCopilot', "Chat with Copilot"), 'command:workbench.action.chat.open');
@@ -260,7 +278,9 @@ function createCopilotSetupStep(id: string, button: string, when: string, includ
 		description,
 		when: `${when} && !chatSetupHidden`,
 		media: {
-			type: 'svg', altText: 'Zaelot Developer Studio Copilot multi file edits', path: 'multi-file-edits.svg'
+			type: 'svg',
+			altText: 'Zaelot Developer Studio Copilot multi file edits',
+			path: 'multi-file-edits.svg'
 		},
 	};
 }
@@ -297,7 +317,9 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					description: localize('gettingStarted.extensionsWeb.description.interpolated', "Extensions are Zaelot Developer Studio's power-ups. A growing number are becoming available in the web.\n{0}", Button(localize('browsePopularWeb', "Browse Popular Web Extensions"), 'command:workbench.extensions.action.showPopularExtensions')),
 					when: 'workspacePlatform == \'webworker\'',
 					media: {
-						type: 'svg', altText: 'Zaelot Developer Studio extension marketplace with featured language extensions', path: 'extensions-web.svg'
+						type: 'svg',
+						altText: 'Zaelot Developer Studio extension marketplace with featured language extensions',
+						path: 'extensions-web.svg'
 					},
 				},
 				{
@@ -342,7 +364,11 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					id: 'commandPaletteTask',
 					title: localize('gettingStarted.commandPalette.title', "Unlock productivity with the Command Palette "),
 					description: localize('gettingStarted.commandPalette.description.interpolated', "Run commands without reaching for your mouse to accomplish any task in Zaelot Developer Studio.\n{0}", Button(localize('commandPalette', "Open Command Palette"), 'command:workbench.action.showCommands')),
-					media: { type: 'svg', altText: 'Command Palette overlay for searching and executing commands.', path: 'commandPalette.svg' },
+					media: {
+						type: 'svg',
+						altText: 'Command Palette overlay for searching and executing commands.',
+						path: 'commandPalette.svg'
+					},
 				},
 				// Hidden in favor of copilot entry (to be revisited when copilot entry moves, if at all)
 				// {
@@ -410,7 +436,9 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					description: localize('gettingStarted.menuBar.description.interpolated', "The full menu bar is available in the dropdown menu to make room for your code. Toggle its appearance for faster access. \n{0}", Button(localize('toggleMenuBar', "Toggle Menu Bar"), 'command:workbench.action.toggleMenuBar')),
 					when: 'isWeb',
 					media: {
-						type: 'svg', altText: 'Comparing menu dropdown with the visible menu bar.', path: 'menuBar.svg'
+						type: 'svg',
+						altText: 'Comparing menu dropdown with the visible menu bar.',
+						path: 'menuBar.svg'
 					},
 				},
 				{
@@ -419,7 +447,9 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					description: localize('gettingStarted.extensionsWeb.description.interpolated', "Extensions are Zaelot Developer Studio's power-ups. A growing number are becoming available in the web.\n{0}", Button(localize('browsePopularWeb', "Browse Popular Web Extensions"), 'command:workbench.extensions.action.showPopularExtensions')),
 					when: 'workspacePlatform == \'webworker\'',
 					media: {
-						type: 'svg', altText: 'Zaelot Developer Studio extension marketplace with featured language extensions', path: 'extensions-web.svg'
+						type: 'svg',
+						altText: 'Zaelot Developer Studio extension marketplace with featured language extensions',
+						path: 'extensions-web.svg'
 					},
 				},
 				{
@@ -438,14 +468,20 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					when: 'syncStatus != uninitialized',
 					completionEvents: ['onEvent:sync-enabled'],
 					media: {
-						type: 'svg', altText: 'The "Turn on Sync" entry in the settings gear menu.', path: 'settingsSync.svg'
+						type: 'svg',
+						altText: 'The "Turn on Sync" entry in the settings gear menu.',
+						path: 'settingsSync.svg'
 					},
 				},
 				{
 					id: 'commandPaletteTaskWeb',
 					title: localize('gettingStarted.commandPalette.title', "Unlock productivity with the Command Palette "),
 					description: localize('gettingStarted.commandPalette.description.interpolated', "Run commands without reaching for your mouse to accomplish any task in Zaelot Developer Studio.\n{0}", Button(localize('commandPalette', "Open Command Palette"), 'command:workbench.action.showCommands')),
-					media: { type: 'svg', altText: 'Command Palette overlay for searching and executing commands.', path: 'commandPalette.svg' },
+					media: {
+						type: 'svg',
+						altText: 'Command Palette overlay for searching and executing commands.',
+						path: 'commandPalette.svg'
+					},
 				},
 				{
 					id: 'pickAFolderTask-WebWeb',
@@ -453,7 +489,9 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					description: localize('gettingStarted.setup.OpenFolderWeb.description.interpolated', "You're all set to start coding. You can open a local project or a remote repository to get your files into Zaelot Developer Studio.\n{0}\n{1}", Button(localize('openFolder', "Open Folder"), 'command:workbench.action.addRootFolder'), Button(localize('openRepository', "Open Repository"), 'command:remoteHub.openRepository')),
 					when: 'workspaceFolderCount == 0',
 					media: {
-						type: 'svg', altText: 'Explorer view showing buttons for opening folder and cloning repository.', path: 'openFolder.svg'
+						type: 'svg',
+						altText: 'Explorer view showing buttons for opening folder and cloning repository.',
+						path: 'openFolder.svg'
 					}
 				},
 				{
@@ -583,7 +621,9 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					description: localize('gettingStarted.extensions.description.interpolated', "Extensions are Zaelot Developer Studio's power-ups. They range from handy productivity hacks, expanding out-of-the-box features, to adding completely new capabilities.\n{0}", Button(localize('browsePopular', "Browse Popular Extensions"), 'command:workbench.extensions.action.showPopularExtensions')),
 					when: 'workspacePlatform != \'webworker\'',
 					media: {
-						type: 'svg', altText: 'Zaelot Developer Studio extension marketplace with featured language extensions', path: 'extensions.svg'
+						type: 'svg',
+						altText: 'Zaelot Developer Studio extension marketplace with featured language extensions',
+						path: 'extensions.svg'
 					},
 				},
 				{
@@ -592,7 +632,9 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					description: localize('gettingStarted.terminal.description.interpolated', "Quickly run shell commands and monitor build output, right next to your code.\n{0}", Button(localize('showTerminal', "Open Terminal"), 'command:workbench.action.terminal.toggleTerminal')),
 					when: 'workspacePlatform != \'webworker\' && remoteName != codespaces && !terminalIsOpen',
 					media: {
-						type: 'svg', altText: 'Integrated terminal running a few npm commands', path: 'terminal.svg'
+						type: 'svg',
+						altText: 'Integrated terminal running a few npm commands',
+						path: 'terminal.svg'
 					},
 				},
 				{
@@ -634,7 +676,10 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				{
 					id: 'installGit',
 					title: localize('gettingStarted.installGit.title', "Install Git"),
-					description: localize({ key: 'gettingStarted.installGit.description.interpolated', comment: ['The placeholders are command link items should not be translated'] }, "Install Git to track changes in your projects.\n{0}\n{1}Reload window{2} after installation to complete Git setup.", Button(localize('installGit', "Install Git"), 'https://aka.ms/vscode-install-git'), '[', '](command:workbench.action.reloadWindow)'),
+					description: localize({
+						key: 'gettingStarted.installGit.description.interpolated',
+						comment: ['The placeholders are command link items should not be translated']
+					}, "Install Git to track changes in your projects.\n{0}\n{1}Reload window{2} after installation to complete Git setup.", Button(localize('installGit', "Install Git"), 'https://aka.ms/vscode-install-git'), '[', '](command:workbench.action.reloadWindow)'),
 					when: 'git.missing',
 					media: {
 						type: 'svg', altText: 'Install Git.', path: 'git.svg',
@@ -667,7 +712,9 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					description: localize('gettingStarted.workspaceTrust.description.interpolated', "{0} lets you decide whether your project folders should **allow or restrict** automatic code execution __(required for extensions, debugging, etc)__.\nOpening a file/folder will prompt to grant trust. You can always {1} later.", Button(localize('workspaceTrust', "Workspace Trust"), 'https://code.visualstudio.com/docs/editor/workspace-trust'), Button(localize('enableTrust', "enable trust"), 'command:toSide:workbench.trust.manage')),
 					when: 'workspacePlatform != \'webworker\' && !isWorkspaceTrusted && workspaceFolderCount == 0',
 					media: {
-						type: 'svg', altText: 'Workspace Trust editor in Restricted mode and a primary button for switching to Trusted mode.', path: 'workspaceTrust.svg'
+						type: 'svg',
+						altText: 'Workspace Trust editor in Restricted mode and a primary button for switching to Trusted mode.',
+						path: 'workspaceTrust.svg'
 					},
 				},
 			]
@@ -713,7 +760,9 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					title: localize('gettingStarted.agentMode.title', "Agent mode"),
 					description: localize('gettingStarted.agentMode.description', "Analyzes the problem, plans next steps, and makes changes for you."),
 					media: {
-						type: 'svg', altText: 'Zaelot Developer Studio Copilot multi file edits', path: 'multi-file-edits.svg'
+						type: 'svg',
+						altText: 'Zaelot Developer Studio Copilot multi file edits',
+						path: 'multi-file-edits.svg'
 					},
 				},
 				{
@@ -742,27 +791,35 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				},
 				{
 					id: 'migration.import',
-					title: localize('gettingStarted.migration.import.title', "🚀 Import from VS Code / Cursor"),
-					description: localize('gettingStarted.migration.import.description.interpolated', "Already using VS Code or Cursor? Migrate all your extensions, settings, keybindings, and snippets in one click!\n\n✅ **What gets imported:**\n• All installed extensions\n• User settings and preferences\n• Custom keyboard shortcuts\n• Code snippets\n• Color themes\n\n{0}", Button(localize('startImport', "🔄 Start Migration"), 'command:zaelot.importFromOtherEditors')),
-					media: { type: 'svg', altText: 'Import extensions and settings from other editors', path: 'extensions.svg' },
+					title: localize('gettingStarted.migration.import.title', "🚀 Import from VS Code / Cursor"), // allow-any-unicode-next-line
+					description: localize('gettingStarted.migration.import.description.interpolated', "Already using VS Code or Cursor? Migrate all your extensions, settings, keybindings, and snippets in one click!\n\n✅ **What gets imported:**\n• All installed extensions\n• User settings and preferences\n• Custom keyboard shortcuts\n• Code snippets\n• Color themes\n\n{0}", Button(localize('startImport', "🔄 Start Migration"), 'command:zaelot.importFromOtherEditors')), // allow-any-unicode-next-line
+					media: {
+						type: 'svg',
+						altText: 'Import extensions and settings from other editors',
+						path: 'extensions.svg'
+					},
 				},
 				{
 					id: 'migration.manual',
-					title: localize('gettingStarted.migration.manual.title', "📚 Manual Migration Guide"),
-					description: localize('gettingStarted.migration.manual.description.interpolated', "Prefer to migrate manually? We've got you covered with step-by-step instructions.\n\n📁 **File locations:**\n• **macOS:** ~/Library/Application Support/Code/ or ~/Library/Application Support/Cursor/\n• **Windows:** %APPDATA%\\Code\\ or %APPDATA%\\Cursor\\\n• **Linux:** ~/.config/Code/ or ~/.config/Cursor/\n\n{0}", Button(localize('openMigrationGuide', "📖 Open Migration Guide"), 'command:markdown.showPreview')),
+					title: localize('gettingStarted.migration.manual.title', "📚 Manual Migration Guide"), // allow-any-unicode-next-line
+					description: localize('gettingStarted.migration.manual.description.interpolated', "Prefer to migrate manually? We've got you covered with step-by-step instructions.\n\n📁 **File locations:**\n• **macOS:** ~/Library/Application Support/Code/ or ~/Library/Application Support/Cursor/\n• **Windows:** %APPDATA%\\Code\\ or %APPDATA%\\Cursor\\\n• **Linux:** ~/.config/Code/ or ~/.config/Cursor/\n\n{0}", Button(localize('openMigrationGuide', "📖 Open Migration Guide"), 'command:markdown.showPreview')), // allow-any-unicode-next-line
 					media: { type: 'svg', altText: 'Manual migration guide', path: 'settings.svg' },
 				},
 				{
 					id: 'migration.extensions',
-					title: localize('gettingStarted.migration.extensions.title', "🔌 Reinstall Your Extensions"),
-					description: localize('gettingStarted.migration.extensions.description.interpolated', "Can't find your favorite extensions? Install them directly from the marketplace.\n\n💡 **Tip:** Most VS Code extensions work perfectly in Zaelot Developer Studio!\n\n🔍 **Popular extensions to try:**\n• GitLens\n• Prettier\n• ESLint\n• Python\n• Live Server\n\n{0}", Button(localize('browseExtensions', "🛍️ Browse Extensions"), 'command:workbench.view.extensions')),
+					title: localize('gettingStarted.migration.extensions.title', "🔌 Reinstall Your Extensions"), // allow-any-unicode-next-line
+					description: localize('gettingStarted.migration.extensions.description.interpolated', "Can't find your favorite extensions? Install them directly from the marketplace.\n\n💡 **Tip:** Most VS Code extensions work perfectly in Zaelot Developer Studio!\n\n🔍 **Popular extensions to try:**\n• GitLens\n• Prettier\n• ESLint\n• Python\n• Live Server\n\n{0}", Button(localize('browseExtensions', "🛍️ Browse Extensions"), 'command:workbench.view.extensions')), // allow-any-unicode-next-line
 					media: { type: 'svg', altText: 'Browse and install extensions', path: 'extensions.svg' },
 				},
 				{
 					id: 'newCommandPaletteTask',
 					title: localize('newgettingStarted.commandPalette.title', "All commands within reach"),
 					description: localize('gettingStarted.commandPalette.description.interpolated', "Run commands without reaching for your mouse to accomplish any task in Zaelot Developer Studio.\n{0}", Button(localize('commandPalette', "Open Command Palette"), 'command:workbench.action.showCommands')),
-					media: { type: 'svg', altText: 'Command Palette overlay for searching and executing commands.', path: 'commandPalette.svg' },
+					media: {
+						type: 'svg',
+						altText: 'Command Palette overlay for searching and executing commands.',
+						path: 'commandPalette.svg'
+					},
 				},
 				{
 					id: 'newPickColorTheme',

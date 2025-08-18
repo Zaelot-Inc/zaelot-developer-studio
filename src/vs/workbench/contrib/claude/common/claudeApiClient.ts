@@ -6,7 +6,11 @@
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { Emitter } from '../../../../base/common/event.js';
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
-import { IClaudeConfiguration, IClaudeMessage, IClaudeResponse, IClaudeStreamResponse, ClaudeModelId } from './claudeTypes.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IRequestService } from '../../../../platform/request/common/request.js';
+import {
+	IClaudeConfiguration, IClaudeMessage, IClaudeResponse, IClaudeStreamResponse, ClaudeModelId
+} from './claudeTypes.js';
 
 export const IClaudeApiClient = createDecorator<IClaudeApiClient>('claudeApiClient');
 
@@ -62,16 +66,28 @@ export class ClaudeApiClient implements IClaudeApiClient {
 	private readonly _onDidChangeConfiguration = new Emitter<void>();
 	readonly onDidChangeConfiguration = this._onDidChangeConfiguration.event;
 
-	constructor() {
+	constructor(
+		@ILogService private readonly logService: ILogService,
+		@IRequestService private readonly requestService: IRequestService
+	) {
 	}
 
 	configure(config: IClaudeConfiguration): void {
 		this._configuration = { ...config };
+		this.logService.trace('[Claude] API client configured', {
+			hasApiKey: !!config.apiKey,
+			baseUrl: config.baseUrl || 'https://api.anthropic.com',
+			model: config.model,
+			maxTokens: config.maxTokens,
+			temperature: config.temperature
+		});
 		this._onDidChangeConfiguration.fire();
 	}
 
 	isConfigured(): boolean {
-		return !!this._configuration?.apiKey;
+		const configured = !!this._configuration?.apiKey;
+		this.logService.trace('[Claude] Configuration check:', { configured });
+		return configured;
 	}
 
 	async sendMessage(
@@ -87,6 +103,7 @@ export class ClaudeApiClient implements IClaudeApiClient {
 		token?: CancellationToken
 	): Promise<IClaudeResponse> {
 		if (!this._configuration) {
+			this.logService.error('[Claude] API client is not configured');
 			throw new Error('Claude API client is not configured');
 		}
 
@@ -96,7 +113,7 @@ export class ClaudeApiClient implements IClaudeApiClient {
 			temperature: options.temperature ?? this._configuration.temperature ?? 0.7,
 			messages: messages.filter(m => m.role !== 'system'),
 			system: messages.find(m => m.role === 'system')?.content,
-			stream: !!onProgress,
+			stream: false, // Force non-streaming to avoid CORS issues
 			...(options.tools && { tools: options.tools }),
 			...(options.toolChoice && { tool_choice: options.toolChoice })
 		};
@@ -110,117 +127,136 @@ export class ClaudeApiClient implements IClaudeApiClient {
 			'anthropic-version': '2023-06-01'
 		};
 
+		this.logService.info('[Claude] Sending request to Claude API', {
+			url,
+			model,
+			messageCount: messages.length,
+			hasTools: !!options.tools,
+			stream: false, // Always false now
+			maxTokens: requestBody.max_tokens,
+			temperature: requestBody.temperature
+		});
+
 		try {
-			const response = await fetch(url, {
-				method: 'POST',
-				headers,
-				body: JSON.stringify(requestBody),
-				signal: token?.onCancellationRequested ? AbortSignal.timeout(30000) : undefined
-			});
-
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(`Claude API error: ${response.status} ${response.statusText} - ${errorText}`);
-			}
-
+			// Always use non-streaming to avoid CORS issues
 			if (onProgress) {
-				return this._handleStreamingResponse(response, onProgress, token);
-			} else {
-				return await response.json() as IClaudeResponse;
+				this.logService.warn('[Claude] Streaming not available in browser context, using non-streaming');
 			}
+
+			return this._handleNonStreamingRequest(url, headers, requestBody, token);
 		} catch (error) {
 			if (token?.isCancellationRequested) {
+				this.logService.warn('[Claude] Request was cancelled');
 				throw new Error('Request was cancelled');
 			}
+			this.logService.error('[Claude] Request failed', error);
 			throw error;
 		}
 	}
 
-	private async _handleStreamingResponse(
-		response: Response,
-		onProgress: (chunk: IClaudeStreamResponse) => void,
+	private async _handleNonStreamingRequest(
+		url: string,
+		headers: Record<string, string>,
+		requestBody: any,
 		token?: CancellationToken
 	): Promise<IClaudeResponse> {
-		const reader = response.body?.getReader();
-		if (!reader) {
-			throw new Error('No response body');
+		const response = await this.requestService.request({
+			type: 'POST',
+			url,
+			data: JSON.stringify(requestBody),
+			headers,
+			timeout: 30000
+		}, token || CancellationToken.None);
+
+		// Check for cancellation after network request
+		if (token?.isCancellationRequested) {
+			throw new Error('Request was cancelled');
 		}
 
-		const decoder = new TextDecoder();
-		let buffer = '';
-		let finalResponse: IClaudeResponse | undefined;
+		// Read response stream once
+		const responseText = response.stream.toString();
 
+		if (response.res.statusCode && response.res.statusCode >= 400) {
+			this.logService.error('[Claude] API error', {
+				status: response.res.statusCode,
+				error: responseText
+			});
+			throw new Error(`Claude API error: ${response.res.statusCode} - ${responseText}`);
+		}
+
+		// Parse JSON with error handling
+		let parsedResponse: any;
 		try {
-			while (true) {
-				if (token?.isCancellationRequested) {
-					throw new Error('Request was cancelled');
-				}
-
-				const { done, value } = await reader.read();
-				if (done) {
-					break;
-				}
-
-				buffer += decoder.decode(value, { stream: true });
-				const lines = buffer.split('\n');
-				buffer = lines.pop() || '';
-
-				for (const line of lines) {
-					if (line.startsWith('data: ')) {
-						const data = line.slice(6);
-						if (data === '[DONE]') {
-							continue;
-						}
-
-						try {
-							const chunk = JSON.parse(data) as IClaudeStreamResponse;
-							onProgress(chunk);
-
-							// Build final response from chunks
-							if (chunk.type === 'message_start' && chunk.message) {
-								finalResponse = chunk.message as IClaudeResponse;
-							} else if (chunk.type === 'content_block_delta' && chunk.delta && finalResponse) {
-								if (!finalResponse.content) {
-									finalResponse.content = [{ type: 'text', text: '' }];
-								}
-								if (finalResponse.content[0]) {
-									finalResponse.content[0].text += chunk.delta.text;
-								}
-							} else if (chunk.type === 'message_delta' && chunk.usage && finalResponse) {
-								finalResponse.usage = chunk.usage;
-							}
-						} catch (e) {
-							// Skip invalid JSON chunks
-						}
-					}
-				}
-			}
-		} finally {
-			reader.releaseLock();
+			parsedResponse = JSON.parse(responseText);
+		} catch (error) {
+			this.logService.error('[Claude] Failed to parse response as JSON', {
+				error: error instanceof Error ? error.message : String(error),
+				responseText: responseText.substring(0, 500) // Log first 500 chars for debugging
+			});
+			throw new Error(`Invalid JSON response from Claude API: ${error instanceof Error ? error.message : String(error)}`);
 		}
 
-		if (!finalResponse) {
-			throw new Error('No valid response received from Claude API');
+		// Validate response structure
+		if (!this._isValidClaudeResponse(parsedResponse)) {
+			this.logService.error('[Claude] Invalid response format', { parsedResponse });
+			throw new Error('Invalid response format from Claude API');
 		}
 
-		return finalResponse;
+		const result = parsedResponse as IClaudeResponse;
+
+		this.logService.info('[Claude] Request completed', {
+			inputTokens: result.usage?.input_tokens || 0,
+			outputTokens: result.usage?.output_tokens || 0,
+			model: result.model
+		});
+
+		return result;
 	}
+
+	private _isValidClaudeResponse(obj: any): obj is IClaudeResponse {
+		return obj &&
+			typeof obj.id === 'string' &&
+			obj.type === 'message' &&
+			obj.role === 'assistant' &&
+			Array.isArray(obj.content) &&
+			typeof obj.model === 'string' &&
+			obj.usage &&
+			typeof obj.usage.input_tokens === 'number' &&
+			typeof obj.usage.output_tokens === 'number';
+	}
+
+
+	// Remove or comment out these methods that use fetch()
+	/*
+	private async _handleStreamingWithFetch(...) { ... }
+	private async _getFetchImplementation(...) { ... }
+	private async _handleStreamingResponse(...) { ... }
+	*/
 
 	estimateTokens(text: string): number {
 		// Rough estimation: ~4 characters per token for English text
-		return Math.ceil(text.length / 4);
+		const estimate = Math.ceil(text.length / 4);
+		this.logService.trace('[Claude] Token estimation', {
+			textLength: text.length,
+			estimatedTokens: estimate
+		});
+		return estimate;
 	}
 
 	async testConnection(token?: CancellationToken): Promise<boolean> {
+		this.logService.info('[Claude] Testing API connection');
+
 		try {
 			const testMessage: IClaudeMessage = {
 				role: 'user',
 				content: 'Hello'
 			};
 
-			await this.sendMessage([testMessage], 'claude-3-5-haiku-20241022', { maxTokens: 10 }, undefined, token);
+			await this.sendMessage([testMessage], 'claude-sonnet-4-20250514', { maxTokens: 10 }, undefined, token);
+			this.logService.info('[Claude] Connection test successful');
 			return true;
 		} catch (error) {
+			this.logService.error('[Claude] Connection test failed', error);
 			return false;
 		}
 	}
