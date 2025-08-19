@@ -7,7 +7,7 @@ import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { Emitter } from '../../../../base/common/event.js';
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
-import { IRequestService } from '../../../../platform/request/common/request.js';
+import { IMainProcessService } from '../../../../platform/ipc/common/mainProcessService.js';
 import {
 	IClaudeConfiguration, IClaudeMessage, IClaudeResponse, IClaudeStreamResponse, ClaudeModelId
 } from './claudeTypes.js';
@@ -68,7 +68,7 @@ export class ClaudeApiClient implements IClaudeApiClient {
 
 	constructor(
 		@ILogService private readonly logService: ILogService,
-		@IRequestService private readonly requestService: IRequestService
+		@IMainProcessService private readonly mainProcessService: IMainProcessService
 	) {
 	}
 
@@ -107,131 +107,105 @@ export class ClaudeApiClient implements IClaudeApiClient {
 			throw new Error('Claude API client is not configured');
 		}
 
-		const requestBody = {
-			model,
-			max_tokens: options.maxTokens || this._configuration.maxTokens || 4096,
-			temperature: options.temperature ?? this._configuration.temperature ?? 0.7,
-			messages: messages.filter(m => m.role !== 'system'),
-			system: messages.find(m => m.role === 'system')?.content,
-			stream: false, // Force non-streaming to avoid CORS issues
-			...(options.tools && { tools: options.tools }),
-			...(options.toolChoice && { tool_choice: options.toolChoice })
-		};
-
-		const baseUrl = this._configuration.baseUrl || 'https://api.anthropic.com';
-		const url = `${baseUrl}/v1/messages`;
-
-		const headers = {
-			'Content-Type': 'application/json',
-			'x-api-key': this._configuration.apiKey,
-			'anthropic-version': '2023-06-01'
-		};
-
-		this.logService.info('[Claude] Sending request to Claude API', {
-			url,
+		this.logService.info('[Claude] Sending message via IPC', {
 			model,
 			messageCount: messages.length,
 			hasTools: !!options.tools,
-			stream: false, // Always false now
-			maxTokens: requestBody.max_tokens,
-			temperature: requestBody.temperature
+			streaming: !!onProgress,
+			maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
+			temperature: options.temperature ?? this._configuration.temperature ?? 0.7
 		});
 
 		try {
-			// Always use non-streaming to avoid CORS issues
+			// Use IPC to call main process instead of direct fetch
 			if (onProgress) {
-				this.logService.warn('[Claude] Streaming not available in browser context, using non-streaming');
+				return await this._sendStreamingMessage(messages, model, options, onProgress, token);
+			} else {
+				const channel = this.mainProcessService.getChannel('claude');
+				return await channel.call('sendMessage', [
+					this._configuration,
+					messages,
+					{
+						...options,
+						maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
+						temperature: options.temperature ?? this._configuration.temperature ?? 0.7
+					}
+				]) as IClaudeResponse;
 			}
-
-			return this._handleNonStreamingRequest(url, headers, requestBody, token);
 		} catch (error) {
+			this.logService.error('[Claude] IPC sendMessage failed:', error);
 			if (token?.isCancellationRequested) {
-				this.logService.warn('[Claude] Request was cancelled');
 				throw new Error('Request was cancelled');
 			}
-			this.logService.error('[Claude] Request failed', error);
 			throw error;
 		}
 	}
 
-	private async _handleNonStreamingRequest(
-		url: string,
-		headers: Record<string, string>,
-		requestBody: any,
+	private async _sendStreamingMessage(
+		messages: IClaudeMessage[],
+		model: ClaudeModelId,
+		options: {
+			maxTokens?: number;
+			temperature?: number;
+			tools?: any[];
+			toolChoice?: any;
+		},
+		onProgress: (chunk: IClaudeStreamResponse) => void,
 		token?: CancellationToken
 	): Promise<IClaudeResponse> {
-		const response = await this.requestService.request({
-			type: 'POST',
-			url,
-			data: JSON.stringify(requestBody),
-			headers,
-			timeout: 30000
-		}, token || CancellationToken.None);
+		this.logService.info('[Claude] Sending streaming message via IPC');
 
-		// Check for cancellation after network request
-		if (token?.isCancellationRequested) {
-			throw new Error('Request was cancelled');
+		if (!this._configuration) {
+			throw new Error('Claude API client is not configured');
 		}
 
-		// Read response stream once
-		const responseText = response.stream.toString();
+		// Setup streaming progress listener
+		const progressListener = (event: any, chunk: string) => {
+			onProgress({ delta: { text: chunk } });
+		};
 
-		if (response.res.statusCode && response.res.statusCode >= 400) {
-			this.logService.error('[Claude] API error', {
-				status: response.res.statusCode,
-				error: responseText
-			});
-			throw new Error(`Claude API error: ${response.res.statusCode} - ${responseText}`);
+		// Add listener for streaming progress
+		const ipcRenderer = (globalThis as any).electronBridge?.ipcRenderer;
+		if (ipcRenderer) {
+			ipcRenderer.on('claude:streamingProgress', progressListener);
 		}
 
-		// Parse JSON with error handling
-		let parsedResponse: any;
 		try {
-			parsedResponse = JSON.parse(responseText);
-		} catch (error) {
-			this.logService.error('[Claude] Failed to parse response as JSON', {
-				error: error instanceof Error ? error.message : String(error),
-				responseText: responseText.substring(0, 500) // Log first 500 chars for debugging
-			});
-			throw new Error(`Invalid JSON response from Claude API: ${error instanceof Error ? error.message : String(error)}`);
+			// Use direct IPC for streaming messages since callbacks can't be passed through channels
+			if (ipcRenderer) {
+				const result = await ipcRenderer.invoke('claude:sendStreamingMessage',
+					this._configuration,
+					messages,
+					{
+						...options,
+						maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
+						temperature: options.temperature ?? this._configuration.temperature ?? 0.7
+					}
+				) as IClaudeResponse;
+				return result;
+			} else {
+				// Fallback to channel system without streaming
+				const channel = this.mainProcessService.getChannel('claude');
+				const result = await channel.call('sendMessage', [
+					this._configuration,
+					messages,
+					{
+						...options,
+						maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
+						temperature: options.temperature ?? this._configuration.temperature ?? 0.7
+					}
+				]) as IClaudeResponse;
+				return result;
+			}
+		} finally {
+			// Cleanup listener
+			if (ipcRenderer) {
+				ipcRenderer.removeListener('claude:streamingProgress', progressListener);
+			}
 		}
-
-		// Validate response structure
-		if (!this._isValidClaudeResponse(parsedResponse)) {
-			this.logService.error('[Claude] Invalid response format', { parsedResponse });
-			throw new Error('Invalid response format from Claude API');
-		}
-
-		const result = parsedResponse as IClaudeResponse;
-
-		this.logService.info('[Claude] Request completed', {
-			inputTokens: result.usage?.input_tokens || 0,
-			outputTokens: result.usage?.output_tokens || 0,
-			model: result.model
-		});
-
-		return result;
-	}
-
-	private _isValidClaudeResponse(obj: any): obj is IClaudeResponse {
-		return obj &&
-			typeof obj.id === 'string' &&
-			obj.type === 'message' &&
-			obj.role === 'assistant' &&
-			Array.isArray(obj.content) &&
-			typeof obj.model === 'string' &&
-			obj.usage &&
-			typeof obj.usage.input_tokens === 'number' &&
-			typeof obj.usage.output_tokens === 'number';
 	}
 
 
-	// Remove or comment out these methods that use fetch()
-	/*
-	private async _handleStreamingWithFetch(...) { ... }
-	private async _getFetchImplementation(...) { ... }
-	private async _handleStreamingResponse(...) { ... }
-	*/
 
 	estimateTokens(text: string): number {
 		// Rough estimation: ~4 characters per token for English text
@@ -244,17 +218,18 @@ export class ClaudeApiClient implements IClaudeApiClient {
 	}
 
 	async testConnection(token?: CancellationToken): Promise<boolean> {
-		this.logService.info('[Claude] Testing API connection');
+		if (!this._configuration) {
+			this.logService.error('[Claude] API client is not configured');
+			return false;
+		}
+
+		this.logService.info('[Claude] Testing API connection via IPC');
 
 		try {
-			const testMessage: IClaudeMessage = {
-				role: 'user',
-				content: 'Hello'
-			};
-
-			await this.sendMessage([testMessage], 'claude-sonnet-4-20250514', { maxTokens: 10 }, undefined, token);
+			const channel = this.mainProcessService.getChannel('claude');
+			const result = await channel.call('testConnection', [this._configuration]) as boolean;
 			this.logService.info('[Claude] Connection test successful');
-			return true;
+			return result;
 		} catch (error) {
 			this.logService.error('[Claude] Connection test failed', error);
 			return false;
