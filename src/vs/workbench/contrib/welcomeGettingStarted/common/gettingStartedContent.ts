@@ -15,6 +15,8 @@ import { CONTEXT_ACCESSIBILITY_MODE_ENABLED } from '../../../../platform/accessi
 import { URI } from '../../../../base/common/uri.js';
 import product from '../../../../platform/product/common/product.js';
 
+const NEW_WELCOME_EXPERIENCE = 'zaelot.newWelcome';
+
 interface IGettingStartedContentProvider {
 	(): string;
 }
@@ -68,7 +70,6 @@ gettingStartedContentRegistry.registerProvider('vs/workbench/contrib/welcomeGett
 
 const setupIcon = registerIcon('getting-started-setup', Codicon.zap, localize('getting-started-setup-icon', "Icon used for the setup category of welcome page"));
 const beginnerIcon = registerIcon('getting-started-beginner', Codicon.lightbulb, localize('getting-started-beginner-icon', "Icon used for the beginner category of welcome page"));
-export const NEW_WELCOME_EXPERIENCE = 'NewWelcomeExperience';
 
 export type BuiltinGettingStartedStep = {
 	id: string;
@@ -112,7 +113,7 @@ type GettingStartedStartEntryContent = BuiltinGettingStartedStartEntry[];
 export const startEntries: GettingStartedStartEntryContent = [
 	{
 		id: 'migration.quickStart',
-		title: localize('gettingStarted.migration.quickStart.title', "🚀 Migrate from VS Code / Cursor"),
+		title: localize('gettingStarted.migration.quickStart.title', "Migrate from VS Code / Cursor"),
 		description: localize('gettingStarted.migration.quickStart.description', "Import your extensions, settings, and configurations in just a few clicks!"),
 		icon: Codicon.arrowSwap,
 		content: {
@@ -122,7 +123,7 @@ export const startEntries: GettingStartedStartEntryContent = [
 	},
 	{
 		id: 'claude.openChat',
-		title: localize('gettingStarted.claude.title', "💬 Chat with Claude AI"),
+		title: localize('gettingStarted.claude.title', "Chat with Claude AI"),
 		description: localize('gettingStarted.claude.description', "Start a conversation with Claude AI to get help with your code."),
 		icon: Codicon.commentDiscussion,
 		content: {
@@ -742,20 +743,20 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				},
 				{
 					id: 'migration.import',
-					title: localize('gettingStarted.migration.import.title', "🚀 Import from VS Code / Cursor"),
-					description: localize('gettingStarted.migration.import.description.interpolated', "Already using VS Code or Cursor? Migrate all your extensions, settings, keybindings, and snippets in one click!\n\n✅ **What gets imported:**\n• All installed extensions\n• User settings and preferences\n• Custom keyboard shortcuts\n• Code snippets\n• Color themes\n\n{0}", Button(localize('startImport', "🔄 Start Migration"), 'command:zaelot.importFromOtherEditors')),
+					title: localize('gettingStarted.migration.import.title', "Import from VS Code / Cursor"),
+					description: localize('gettingStarted.migration.import.description.interpolated', "Already using VS Code or Cursor? Migrate all your extensions, settings, keybindings, and snippets in one click!\n\n**What gets imported:**\n• All installed extensions\n• User settings and preferences\n• Custom keyboard shortcuts\n• Code snippets\n• Color themes\n\n{0}", Button(localize('startImport', "Start Migration"), 'command:zaelot.importFromOtherEditors')),
 					media: { type: 'svg', altText: 'Import extensions and settings from other editors', path: 'extensions.svg' },
 				},
 				{
 					id: 'migration.manual',
-					title: localize('gettingStarted.migration.manual.title', "📚 Manual Migration Guide"),
-					description: localize('gettingStarted.migration.manual.description.interpolated', "Prefer to migrate manually? We've got you covered with step-by-step instructions.\n\n📁 **File locations:**\n• **macOS:** ~/Library/Application Support/Code/ or ~/Library/Application Support/Cursor/\n• **Windows:** %APPDATA%\\Code\\ or %APPDATA%\\Cursor\\\n• **Linux:** ~/.config/Code/ or ~/.config/Cursor/\n\n{0}", Button(localize('openMigrationGuide', "📖 Open Migration Guide"), 'command:markdown.showPreview')),
+					title: localize('gettingStarted.migration.manual.title', "Manual Migration Guide"),
+					description: localize('gettingStarted.migration.manual.description.interpolated', "Prefer to migrate manually? We've got you covered with step-by-step instructions.\n\n**File locations:**\n• **macOS:** ~/Library/Application Support/Code/ or ~/Library/Application Support/Cursor/\n• **Windows:** %APPDATA%\\Code\\ or %APPDATA%\\Cursor\\\n• **Linux:** ~/.config/Code/ or ~/.config/Cursor/\n\n{0}", Button(localize('openMigrationGuide', "Open Migration Guide"), 'command:markdown.showPreview')),
 					media: { type: 'svg', altText: 'Manual migration guide', path: 'settings.svg' },
 				},
 				{
 					id: 'migration.extensions',
-					title: localize('gettingStarted.migration.extensions.title', "🔌 Reinstall Your Extensions"),
-					description: localize('gettingStarted.migration.extensions.description.interpolated', "Can't find your favorite extensions? Install them directly from the marketplace.\n\n💡 **Tip:** Most VS Code extensions work perfectly in Zaelot Developer Studio!\n\n🔍 **Popular extensions to try:**\n• GitLens\n• Prettier\n• ESLint\n• Python\n• Live Server\n\n{0}", Button(localize('browseExtensions', "🛍️ Browse Extensions"), 'command:workbench.view.extensions')),
+					title: localize('gettingStarted.migration.extensions.title', "Reinstall Your Extensions"),
+					description: localize('gettingStarted.migration.extensions.description.interpolated', "Can't find your favorite extensions? Install them directly from the marketplace.\n\n**Tip:** Most VS Code extensions work perfectly in Zaelot Developer Studio!\n\n**Popular extensions to try:**\n• GitLens\n• Prettier\n• ESLint\n• Python\n• Live Server\n\n{0}", Button(localize('browseExtensions', "Browse Extensions"), 'command:workbench.view.extensions')),
 					media: { type: 'svg', altText: 'Browse and install extensions', path: 'extensions.svg' },
 				},
 				{
