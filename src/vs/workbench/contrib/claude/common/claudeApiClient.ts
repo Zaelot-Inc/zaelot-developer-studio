@@ -160,8 +160,14 @@ export class ClaudeApiClient implements IClaudeApiClient {
 		}
 
 		// Setup streaming progress listener
-		const progressListener = (event: any, chunk: string) => {
-			onProgress({ delta: { text: chunk } });
+		const progressListener = (_event: unknown, chunk: string) => {
+			onProgress({
+				type: 'content_block_delta',
+				delta: {
+					type: 'text_delta',
+					text: chunk
+				}
+			});
 		};
 
 		// Add listener for streaming progress
