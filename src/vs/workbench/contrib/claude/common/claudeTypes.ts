@@ -67,6 +67,14 @@ export const CLAUDE_MODELS = {
 		supportsVision: true,
 		supportsTools: true
 	},
+	'claude-opus-4-20250514': {
+		name: 'Claude Opus 4',
+		family: 'claude-4-0',
+		maxInputTokens: 200000,
+		maxOutputTokens: 32000,
+		supportsVision: true,
+		supportsTools: true
+	},
 	'claude-3-7-sonnet-20250219': {
 		name: 'Claude Sonnet 3.7',
 		family: 'claude-3-7',
