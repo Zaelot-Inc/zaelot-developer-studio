@@ -32,13 +32,14 @@ export class ClaudeChannel implements IServerChannel {
 				if (arg.length < 2) {
 					throw new Error('sendMessage requires config and messages arguments');
 				}
+				// arg[0] = config, arg[1] = messages, arg[2] = options (optional)
 				return this.claudeService.sendMessage(arg[0], arg[1], arg[2]);
 
 			case 'sendStreamingMessage':
 				if (arg.length < 3) {
 					throw new Error('sendStreamingMessage requires config, messages, and onProgress arguments');
 				}
-				// arg[2] should be the onProgress callback, arg[3] should be options
+				// arg[0] = config, arg[1] = messages, arg[2] = onProgress callback, arg[3] = options (optional)
 				return this.claudeService.sendStreamingMessage(arg[0], arg[1], arg[2], arg[3]);
 		}
 
