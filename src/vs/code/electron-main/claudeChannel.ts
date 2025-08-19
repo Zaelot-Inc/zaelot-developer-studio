@@ -16,10 +16,30 @@ export class ClaudeChannel implements IServerChannel {
 	}
 
 	call(_: unknown, command: string, arg?: any): Promise<any> {
+		// Validate that arg exists and is an array
+		if (!Array.isArray(arg)) {
+			throw new Error(`Invalid arguments for command: ${command}`);
+		}
+
 		switch (command) {
-			case 'testConnection': return this.claudeService.testConnection(arg[0]);
-			case 'sendMessage': return this.claudeService.sendMessage(arg[0], arg[1], arg[2]);
-			case 'sendStreamingMessage': return this.claudeService.sendStreamingMessage(arg[0], arg[1], () => { }, arg[2]);
+			case 'testConnection':
+				if (arg.length < 1) {
+					throw new Error('testConnection requires config argument');
+				}
+				return this.claudeService.testConnection(arg[0]);
+
+			case 'sendMessage':
+				if (arg.length < 2) {
+					throw new Error('sendMessage requires config and messages arguments');
+				}
+				return this.claudeService.sendMessage(arg[0], arg[1], arg[2]);
+
+			case 'sendStreamingMessage':
+				if (arg.length < 3) {
+					throw new Error('sendStreamingMessage requires config, messages, and onProgress arguments');
+				}
+				// arg[2] should be the onProgress callback, arg[3] should be options
+				return this.claudeService.sendStreamingMessage(arg[0], arg[1], arg[2], arg[3]);
 		}
 
 		throw new Error(`Call not found: ${command}`);
