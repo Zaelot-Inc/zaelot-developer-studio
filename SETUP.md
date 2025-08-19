@@ -78,7 +78,7 @@ export CLAUDE_API_KEY="sk-ant-api03-..."
 ```json
 {
 	"claude.apiKey": "sk-ant-api03-...",
-	"claude.model": "claude-3-5-sonnet-20241022"
+	"claude.model": "claude-3-5-sonnet-20241220"
 }
 ```
 
@@ -113,7 +113,7 @@ export CLAUDE_API_KEY="sk-ant-api03-..."
 
 ```json
 {
-	"claude.model": "claude-3-5-sonnet-20241022",
+	"claude.model": "claude-3-5-sonnet-20241220",
 	"claude.maxTokens": 4096,
 	"claude.temperature": 0.7,
 	"claude.baseUrl": "https://api.anthropic.com"

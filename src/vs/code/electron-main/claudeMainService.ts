@@ -86,7 +86,7 @@ export class ClaudeMainService extends Disposable implements IClaudeMainService 
 
 		try {
 			const response = await this._makeRequest(config, {
-				model: config.model || 'claude-3-5-sonnet-20241022',
+				model: config.model || 'claude-3-5-sonnet-20241220',
 				max_tokens: 10,
 				messages: [{ role: 'user', content: 'Hello' }]
 			});
@@ -113,7 +113,7 @@ export class ClaudeMainService extends Disposable implements IClaudeMainService 
 		}
 
 		const requestBody = {
-			model: config.model || 'claude-3-5-sonnet-20241022',
+			model: config.model || 'claude-3-5-sonnet-20241220',
 			max_tokens: options.maxTokens || config.maxTokens || 4096,
 			temperature: options.temperature ?? config.temperature ?? 0.7,
 			messages: messages.filter(m => m.role !== 'system'),
@@ -160,7 +160,7 @@ export class ClaudeMainService extends Disposable implements IClaudeMainService 
 		}
 
 		const requestBody = {
-			model: config.model || 'claude-3-5-sonnet-20241022',
+			model: config.model || 'claude-3-5-sonnet-20241220',
 			max_tokens: options.maxTokens || config.maxTokens || 4096,
 			temperature: options.temperature ?? config.temperature ?? 0.7,
 			messages: messages.filter(m => m.role !== 'system'),
