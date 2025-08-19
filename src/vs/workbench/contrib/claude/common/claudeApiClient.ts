@@ -171,18 +171,32 @@ export class ClaudeApiClient implements IClaudeApiClient {
 		}
 
 		try {
-			const channel = this.mainProcessService.getChannel('claude');
-			const result = await channel.call('sendStreamingMessage', [
-				this._configuration,
-				messages,
-				{
-					...options,
-					maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
-					temperature: options.temperature ?? this._configuration.temperature ?? 0.7
-				}
-			]) as IClaudeResponse;
-
-			return result;
+			// Use direct IPC for streaming messages since callbacks can't be passed through channels
+			if (ipcRenderer) {
+				const result = await ipcRenderer.invoke('claude:sendStreamingMessage',
+					this._configuration,
+					messages,
+					{
+						...options,
+						maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
+						temperature: options.temperature ?? this._configuration.temperature ?? 0.7
+					}
+				) as IClaudeResponse;
+				return result;
+			} else {
+				// Fallback to channel system without streaming
+				const channel = this.mainProcessService.getChannel('claude');
+				const result = await channel.call('sendMessage', [
+					this._configuration,
+					messages,
+					{
+						...options,
+						maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
+						temperature: options.temperature ?? this._configuration.temperature ?? 0.7
+					}
+				]) as IClaudeResponse;
+				return result;
+			}
 		} finally {
 			// Cleanup listener
 			if (ipcRenderer) {

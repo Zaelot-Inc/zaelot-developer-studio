@@ -35,12 +35,15 @@ export class ClaudeChannel implements IServerChannel {
 				// arg[0] = config, arg[1] = messages, arg[2] = options (optional)
 				return this.claudeService.sendMessage(arg[0], arg[1], arg[2]);
 
-			case 'sendStreamingMessage':
-				if (arg.length < 3) {
-					throw new Error('sendStreamingMessage requires config, messages, and onProgress arguments');
+			case 'sendStreamingMessage': {
+				if (arg.length < 2) {
+					throw new Error('sendStreamingMessage requires config and messages arguments');
 				}
-				// arg[0] = config, arg[1] = messages, arg[2] = onProgress callback, arg[3] = options (optional)
-				return this.claudeService.sendStreamingMessage(arg[0], arg[1], arg[2], arg[3]);
+				// arg[0] = config, arg[1] = messages, arg[2] = options (optional)
+				// Note: Streaming progress is handled via IPC events, not as a callback parameter
+				// Since channels can't directly send events, fallback to non-streaming version
+				return this.claudeService.sendMessage(arg[0], arg[1], arg[2]); // Use non-streaming version
+			}
 		}
 
 		throw new Error(`Call not found: ${command}`);
