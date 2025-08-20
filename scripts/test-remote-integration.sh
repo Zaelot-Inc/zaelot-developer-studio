@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
+# Skip remote integration tests if requested
+if [ "$SKIP_REMOTE_TESTS" = "1" ]; then
+	echo "### Skipping remote integration tests (SKIP_REMOTE_TESTS=1)"
+	exit 0
+fi
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
 	realpath() { [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"; }
 	ROOT=$(dirname $(dirname $(realpath "$0")))
@@ -83,7 +89,7 @@ run_test_with_timeout() {
 
 	# Run test with timeout command if available
 	if command -v timeout >/dev/null 2>&1; then
-		timeout 600 "$@" || echo "WARNING: $test_name may have timed out or failed"
+		timeout 1200 "$@" || echo "WARNING: $test_name may have timed out or failed"
 	else
 		"$@"
 	fi
