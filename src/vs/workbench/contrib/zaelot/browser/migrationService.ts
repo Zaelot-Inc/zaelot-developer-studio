@@ -80,7 +80,7 @@ export class MigrationService extends Disposable implements IMigrationService {
 
 		for (const candidate of candidates) {
 			// allow-any-unicode-next-line
-		this.logService.info(`🔍 Checking ${candidate.name}:`);
+			this.logService.info(`🔍 Checking ${candidate.name}:`);
 			this.logService.info(`  - User data path: ${candidate.userDataPath}`);
 			this.logService.info(`  - Extensions path: ${candidate.extensionsPath}`);
 
@@ -103,6 +103,7 @@ export class MigrationService extends Disposable implements IMigrationService {
 			this.logService.info(`  - Extensions.json exists: ${extensionsJsonExists}`);
 
 			const exists = userDataExists && extensionsExists && settingsExists;
+			// allow-any-unicode-next-line
 			this.logService.info(`  - ✅ Installation valid: ${exists}`);
 
 			installations.push({
@@ -177,41 +178,52 @@ export class MigrationService extends Disposable implements IMigrationService {
 	}
 
 	private async copySettings(installation: IDetectedInstallation): Promise<void> {
+		// allow-any-unicode-next-line
 		this.logService.info('⚙️ Starting settings migration...');
 
 		try {
 			const sourceSettingsPath = joinPath(URI.file(installation.userDataPath), 'User', 'settings.json');
 			const currentUserDataPath = this.calculateUserDataPath();
 
+			// allow-any-unicode-next-line
 			this.logService.info(`📂 Source settings path: ${sourceSettingsPath.fsPath}`);
+			// allow-any-unicode-next-line
 			this.logService.info(`📂 Target user data path: ${currentUserDataPath}`);
 
 			// Ensure User directory exists first
 			const userDir = joinPath(URI.file(currentUserDataPath), 'User');
+			// allow-any-unicode-next-line
 			this.logService.info(`📁 Creating User directory: ${userDir.fsPath}`);
 
 			try {
 				await this.fileService.createFolder(userDir);
+				// allow-any-unicode-next-line
 				this.logService.info('✅ User directory created/exists');
 			} catch (e) {
+				// allow-any-unicode-next-line
 				this.logService.info('ℹ️ User directory already exists');
 			}
 
 			const targetSettingsPath = joinPath(URI.file(currentUserDataPath), 'User', 'settings.json');
+			// allow-any-unicode-next-line
 			this.logService.info(`📄 Target settings path: ${targetSettingsPath.fsPath}`);
 
 			// Check if source settings exist
 			const sourceExists = await this.fileService.exists(sourceSettingsPath);
+			// allow-any-unicode-next-line
 			this.logService.info(`🔍 Source settings exist: ${sourceExists}`);
 
 			if (!sourceExists) {
+				// allow-any-unicode-next-line
 				this.logService.warn(`❌ Settings file not found at: ${sourceSettingsPath.fsPath}`);
 				return;
 			}
 
 			// Read source settings
+			// allow-any-unicode-next-line
 			this.logService.info('📖 Reading source settings...');
 			const settingsContent = await this.fileService.readFile(sourceSettingsPath);
+			// allow-any-unicode-next-line
 			this.logService.info(`📝 Settings file size: ${settingsContent.value.byteLength} bytes`);
 
 			// Parse and analyze settings
@@ -219,13 +231,16 @@ export class MigrationService extends Disposable implements IMigrationService {
 			try {
 				settingsObj = JSON.parse(settingsContent.value.toString());
 				const settingsKeys = Object.keys(settingsObj);
+				// allow-any-unicode-next-line
 				this.logService.info(`📊 Found ${settingsKeys.length} settings`);
+				// allow-any-unicode-next-line
 				this.logService.info(`🔧 First 10 settings: ${settingsKeys.slice(0, 10).join(', ')}${settingsKeys.length > 10 ? '...' : ''}`);
 
 				// Log important theme/appearance settings
 				const importantSettings = ['workbench.colorTheme', 'workbench.iconTheme', 'editor.fontFamily', 'editor.fontSize', 'editor.theme'];
 				const foundImportant = importantSettings.filter(key => settingsObj[key] !== undefined);
 				if (foundImportant.length > 0) {
+					// allow-any-unicode-next-line
 					this.logService.info(`🎨 Theme/appearance settings found: ${foundImportant.length}`);
 					foundImportant.forEach(key => {
 						this.logService.info(`  - ${key}: ${JSON.stringify(settingsObj[key])}`);
@@ -239,19 +254,23 @@ export class MigrationService extends Disposable implements IMigrationService {
 			}
 
 			// Write to target
+			// allow-any-unicode-next-line
 			this.logService.info('💾 Writing settings to target location...');
 			await this.fileService.writeFile(targetSettingsPath, settingsContent.value);
 
 			// Verify target file was written
 			const targetExists = await this.fileService.exists(targetSettingsPath);
+			// allow-any-unicode-next-line
 			this.logService.info(`✅ Settings copied successfully. Target exists: ${targetExists}`);
 
 			if (targetExists) {
 				const targetContent = await this.fileService.readFile(targetSettingsPath);
+				// allow-any-unicode-next-line
 				this.logService.info(`📏 Target file size: ${targetContent.value.byteLength} bytes`);
 			}
 
 		} catch (error) {
+			// allow-any-unicode-next-line
 			this.logService.error('❌ Failed to copy settings:', error);
 		}
 	}
@@ -293,49 +312,62 @@ export class MigrationService extends Disposable implements IMigrationService {
 	}
 
 	private async installExtensions(installation: IDetectedInstallation): Promise<void> {
+		// allow-any-unicode-next-line
 		this.logService.info('🔧 Starting extension installation process...');
 
 		try {
 			// Check if extension gallery service is available
 			if (!this.extensionGalleryService) {
+				// allow-any-unicode-next-line
 				this.logService.error('❌ Extension Gallery Service is not available!');
 				return;
 			}
 
+			// allow-any-unicode-next-line
 			this.logService.info('✅ Extension Gallery Service is available');
 
 			// Check if gallery service is enabled
 			const isEnabled = this.extensionGalleryService.isEnabled();
+			// allow-any-unicode-next-line
 			this.logService.info(`🔍 Gallery service enabled: ${isEnabled}`);
 
 			if (!isEnabled) {
+				// allow-any-unicode-next-line
 				this.logService.error('❌ Extension Gallery Service is not enabled in product configuration');
 				return;
 			}
 
 			// Look for extensions.json in the extensions directory
 			const extensionsJsonPath = joinPath(URI.file(installation.extensionsPath), 'extensions.json');
+			// allow-any-unicode-next-line
 			this.logService.info(`🔍 Looking for extensions at: ${extensionsJsonPath.fsPath}`);
 
 			const extensionsJsonExists = await this.fileService.exists(extensionsJsonPath);
+			// allow-any-unicode-next-line
 			this.logService.info(`📁 Extensions.json exists: ${extensionsJsonExists}`);
 
 			if (!extensionsJsonExists) {
+				// allow-any-unicode-next-line
 				this.logService.warn(`❌ Extensions file not found at: ${extensionsJsonPath.fsPath}`);
 				return;
 			}
 
+			// allow-any-unicode-next-line
 			this.logService.info('📖 Reading extensions.json file...');
 			const extensionsContent = await this.fileService.readFile(extensionsJsonPath);
+			// allow-any-unicode-next-line
 			this.logService.info(`📝 Extensions file size: ${extensionsContent.value.byteLength} bytes`);
 
 			// Parse the complex extensions JSON structure
 			let extensionsData;
 			try {
 				extensionsData = JSON.parse(extensionsContent.value.toString());
+				// allow-any-unicode-next-line
 				this.logService.info(`✅ Successfully parsed extensions.json`);
+				// allow-any-unicode-next-line
 				this.logService.info(`📊 Found ${extensionsData.length || 0} installed extensions`);
 			} catch (parseError) {
+				// allow-any-unicode-next-line
 				this.logService.error('❌ Failed to parse extensions.json:', parseError);
 				return;
 			}
@@ -346,8 +378,10 @@ export class MigrationService extends Disposable implements IMigrationService {
 			}
 
 			// Get currently installed extensions for comparison
+			// allow-any-unicode-next-line
 			this.logService.info('🔍 Getting currently installed extensions...');
 			const installedExtensions = await this.extensionManagementService.getInstalled();
+			// allow-any-unicode-next-line
 			this.logService.info(`📋 Currently installed: ${installedExtensions.length} extensions`);
 
 			let successCount = 0;
@@ -356,6 +390,7 @@ export class MigrationService extends Disposable implements IMigrationService {
 
 			for (let i = 0; i < extensionsData.length; i++) {
 				const extension = extensionsData[i];
+				// allow-any-unicode-next-line
 				this.logService.info(`\n🔧 Processing extension ${i + 1}/${extensionsData.length}:`);
 
 				try {
@@ -366,7 +401,9 @@ export class MigrationService extends Disposable implements IMigrationService {
 						continue;
 					}
 
+					// allow-any-unicode-next-line
 					this.logService.info(`  📦 Extension ID: ${extensionId}`);
+					// allow-any-unicode-next-line
 					this.logService.info(`  🏷️  Version: ${extension.version || 'unknown'}`);
 
 					// Check if already installed
@@ -375,12 +412,14 @@ export class MigrationService extends Disposable implements IMigrationService {
 					);
 
 					if (alreadyInstalled) {
+						// allow-any-unicode-next-line
 						this.logService.info(`  ⚪ Already installed: ${extensionId} (v${alreadyInstalled.manifest.version})`);
 						skippedCount++;
 						continue;
 					}
 
 					// Search for extension in gallery
+					// allow-any-unicode-next-line
 					this.logService.info(`  🔍 Searching marketplace for: ${extensionId}`);
 
 					const queryResult = await this.extensionGalleryService.query({
@@ -388,44 +427,58 @@ export class MigrationService extends Disposable implements IMigrationService {
 						pageSize: 1
 					}, CancellationToken.None);
 
+					// allow-any-unicode-next-line
 					this.logService.info(`  📊 Marketplace search results: ${queryResult.firstPage.length} found`);
 
 					if (queryResult.firstPage.length === 0) {
+						// allow-any-unicode-next-line
 						this.logService.warn(`  ❌ Extension not found in marketplace: ${extensionId}`);
 						errorCount++;
 						continue;
 					}
 
 					const galleryExtension = queryResult.firstPage[0];
+					// allow-any-unicode-next-line
 					this.logService.info(`  ✅ Found in marketplace: ${galleryExtension.displayName || extensionId}`);
+					// allow-any-unicode-next-line
 					this.logService.info(`  📈 Downloads: ${(galleryExtension as any).statistics?.find((s: any) => s.statisticName === 'install')?.value || 'unknown'}`);
 
 					// Install the extension
+					// allow-any-unicode-next-line
 					this.logService.info(`  ⬇️ Installing ${extensionId}...`);
 
 					try {
 						await this.extensionManagementService.installFromGallery(galleryExtension);
+						// allow-any-unicode-next-line
 						this.logService.info(`  ✅ Successfully installed: ${extensionId}`);
 						successCount++;
 					} catch (installError) {
+						// allow-any-unicode-next-line
 						this.logService.error(`  ❌ Installation failed for ${extensionId}:`, installError);
 						errorCount++;
 					}
 
 				} catch (extensionError) {
+					// allow-any-unicode-next-line
 					this.logService.error(`  ❌ Error processing ${extension.identifier?.id || 'unknown'}:`, extensionError);
 					errorCount++;
 				}
 			}
 
 			// Summary
+			// allow-any-unicode-next-line
 			this.logService.info(`\n📊 Extension migration summary:`);
+			// allow-any-unicode-next-line
 			this.logService.info(`  ✅ Successfully installed: ${successCount}`);
+			// allow-any-unicode-next-line
 			this.logService.info(`  ⚪ Already installed (skipped): ${skippedCount}`);
+			// allow-any-unicode-next-line
 			this.logService.info(`  ❌ Failed: ${errorCount}`);
+			// allow-any-unicode-next-line
 			this.logService.info(`  📦 Total processed: ${extensionsData.length}`);
 
 		} catch (error) {
+			// allow-any-unicode-next-line
 			this.logService.error('❌ Critical error in extension installation:', error);
 		}
 	}

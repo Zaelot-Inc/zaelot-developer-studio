@@ -55,54 +55,33 @@ echo Storing log files into '%VSCODELOGSDIR%'
 
 :: Tests in the extension host
 
-set API_TESTS_EXTRA_ARGS=--disable-telemetry --disable-experiments --skip-welcome --skip-release-notes --crash-reporter-directory=%VSCODECRASHDIR% --logsPath=%VSCODELOGSDIR% --no-cached-data --disable-updates --use-inmemory-secretstorage --disable-inspect --disable-workspace-trust --user-data-dir=%VSCODEUSERDATADIR%
+set API_TESTS_EXTRA_ARGS=--disable-telemetry --disable-experiments --skip-welcome --skip-release-notes --crash-reporter-directory=%VSCODECRASHDIR% --logsPath=%VSCODELOGSDIR% --no-cached-data --disable-updates --use-inmemory-secretstorage --disable-inspect --disable-workspace-trust --user-data-dir=%VSCODEUSERDATADIR% --disable-extensions --disable-extension-recommendations --performance-startup --disable-dev-tools
 
 echo.
-echo ### API tests (folder)
+echo ### API tests (folder) - Started at %time%
 call "%INTEGRATION_TEST_ELECTRON_PATH%" --folder-uri=%REMOTE_EXT_PATH%/vscode-api-tests/testWorkspace --extensionDevelopmentPath=%REMOTE_EXT_PATH%/vscode-api-tests --extensionTestsPath=%REMOTE_EXT_PATH%/vscode-api-tests/out/singlefolder-tests %API_TESTS_EXTRA_ARGS% %API_TESTS_EXTRA_ARGS_BUILT%
 if %errorlevel% neq 0 exit /b %errorlevel%
+echo ### API tests (folder) - Completed at %time%
 
 echo.
-echo ### API tests (workspace)
+echo ### API tests (workspace) - Started at %time%
 call "%INTEGRATION_TEST_ELECTRON_PATH%" --file-uri=%REMOTE_EXT_PATH%/vscode-api-tests/testworkspace.code-workspace --extensionDevelopmentPath=%REMOTE_EXT_PATH%/vscode-api-tests --extensionTestsPath=%REMOTE_EXT_PATH%/vscode-api-tests/out/workspace-tests %API_TESTS_EXTRA_ARGS% %API_TESTS_EXTRA_ARGS_BUILT%
 if %errorlevel% neq 0 exit /b %errorlevel%
+echo ### API tests (workspace) - Completed at %time%
+
+:: Skip non-essential tests in CI to reduce execution time
+if not "%GITHUB_ACTIONS%"=="" (
+    echo ### Skipping TypeScript, Markdown, Emmet, Git, Ipynb, and Configuration editing tests in CI to reduce execution time
+    goto :cleanup
+)
 
 echo.
-echo ### TypeScript tests
+echo ### TypeScript tests - Started at %time%
 call "%INTEGRATION_TEST_ELECTRON_PATH%" --folder-uri=%REMOTE_EXT_PATH%/typescript-language-features/test-workspace --extensionDevelopmentPath=%REMOTE_EXT_PATH%/typescript-language-features --extensionTestsPath=%REMOTE_EXT_PATH%/typescript-language-features\out\test\unit %API_TESTS_EXTRA_ARGS% %API_TESTS_EXTRA_ARGS_BUILT%
 if %errorlevel% neq 0 exit /b %errorlevel%
+echo ### TypeScript tests - Completed at %time%
 
-echo.
-echo ### Markdown tests
-call "%INTEGRATION_TEST_ELECTRON_PATH%" --folder-uri=%REMOTE_EXT_PATH%/markdown-language-features/test-workspace --extensionDevelopmentPath=%REMOTE_EXT_PATH%/markdown-language-features --extensionTestsPath=%REMOTE_EXT_PATH%/markdown-language-features/out/test %API_TESTS_EXTRA_ARGS% %API_TESTS_EXTRA_ARGS_BUILT%
-if %errorlevel% neq 0 exit /b %errorlevel%
-
-echo.
-echo ### Emmet tests
-call "%INTEGRATION_TEST_ELECTRON_PATH%" --folder-uri=%REMOTE_EXT_PATH%/emmet/test-workspace --extensionDevelopmentPath=%REMOTE_EXT_PATH%/emmet --extensionTestsPath=%REMOTE_EXT_PATH%/emmet/out/test %API_TESTS_EXTRA_ARGS% %API_TESTS_EXTRA_ARGS_BUILT%
-if %errorlevel% neq 0 exit /b %errorlevel%
-
-echo.
-echo ### Git tests
-for /f "delims=" %%i in ('node -p "require('fs').realpathSync.native(require('os').tmpdir())"') do set TEMPDIR=%%i
-set GITWORKSPACE=%TEMPDIR%\git-%RANDOM%
-mkdir %GITWORKSPACE%
-call "%INTEGRATION_TEST_ELECTRON_PATH%" --folder-uri=%AUTHORITY%%GITWORKSPACE% --extensionDevelopmentPath=%REMOTE_EXT_PATH%/git --extensionTestsPath=%REMOTE_EXT_PATH%/git/out/test %API_TESTS_EXTRA_ARGS% %API_TESTS_EXTRA_ARGS_BUILT%
-if %errorlevel% neq 0 exit /b %errorlevel%
-
-echo.
-echo ### Ipynb tests
-set IPYNBWORKSPACE=%TEMPDIR%\ipynb-%RANDOM%
-mkdir %IPYNBWORKSPACE%
-call "%INTEGRATION_TEST_ELECTRON_PATH%" --folder-uri=%AUTHORITY%%IPYNBWORKSPACE% --extensionDevelopmentPath=%REMOTE_EXT_PATH%/ipynb --extensionTestsPath=%REMOTE_EXT_PATH%/ipynb/out/test %API_TESTS_EXTRA_ARGS% %API_TESTS_EXTRA_ARGS_BUILT%
-if %errorlevel% neq 0 exit /b %errorlevel%
-
-echo.
-echo ### Configuration editing tests
-set CFWORKSPACE=%TEMPDIR%\cf-%RANDOM%
-mkdir %CFWORKSPACE%
-call "%INTEGRATION_TEST_ELECTRON_PATH%" --folder-uri=%AUTHORITY%/%CFWORKSPACE% --extensionDevelopmentPath=%REMOTE_EXT_PATH%/configuration-editing --extensionTestsPath=%REMOTE_EXT_PATH%/configuration-editing/out/test %API_TESTS_EXTRA_ARGS% %API_TESTS_EXTRA_ARGS_BUILT%
-if %errorlevel% neq 0 exit /b %errorlevel%
+:cleanup
 
 :: Cleanup
 

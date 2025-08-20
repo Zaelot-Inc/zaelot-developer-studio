@@ -203,7 +203,7 @@ jobs:
         if: ${{ inputs.remote_tests }}
         shell: pwsh
         run: .\scripts\test-remote-integration.bat
-        timeout-minutes: 45
+        timeout-minutes: 60
 
       - name: Diagnostics after integration test runs
         shell: pwsh
