@@ -9,7 +9,7 @@ import * as testRunner from '../../../../test/integration/electron/testrunner';
 const options: any = {
 	ui: 'tdd',
 	color: true,
-	timeout: 60000
+	timeout: 120000 // Increased from 60s to 120s for remote tests
 };
 
 // These integration tests is being run in multiple environments (electron, web, remote)

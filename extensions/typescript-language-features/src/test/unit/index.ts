@@ -23,7 +23,7 @@ const suite = 'Integration TypeScript Tests';
 const options: import('mocha').MochaOptions = {
 	ui: 'tdd',
 	color: true,
-	timeout: 60000
+	timeout: 120000 // Increased from 60s to 120s for remote tests
 };
 
 if (process.env.BUILD_ARTIFACTSTAGINGDIRECTORY) {
