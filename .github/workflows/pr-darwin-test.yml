@@ -195,17 +195,17 @@ jobs:
 
       - name: 🧪 Run smoke tests (Electron)
         if: ${{ inputs.electron_tests }}
-        timeout-minutes: 20
+        timeout-minutes: 25
         run: npm run smoketest-no-compile -- --tracing
 
       - name: 🧪 Run smoke tests (Browser, Chromium)
         if: ${{ inputs.browser_tests }}
-        timeout-minutes: 20
+        timeout-minutes: 25
         run: npm run smoketest-no-compile -- --web --tracing --headless
 
       - name: 🧪 Run smoke tests (Remote)
         if: ${{ inputs.remote_tests }}
-        timeout-minutes: 20
+        timeout-minutes: 25
         run: npm run smoketest-no-compile -- --remote --tracing
 
       - name: Diagnostics after smoke test run

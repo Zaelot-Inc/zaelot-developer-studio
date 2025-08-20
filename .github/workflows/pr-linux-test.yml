@@ -17,7 +17,7 @@ on:
 jobs:
   linux-test:
     name: ${{ inputs.job_name }}
-    runs-on: [ self-hosted, 1ES.Pool=1es-vscode-oss-ubuntu-22.04-x64 ]
+    runs-on: [self-hosted, 1ES.Pool=1es-vscode-oss-ubuntu-22.04-x64]
     env:
       ARTIFACT_NAME: ${{ (inputs.electron_tests && 'electron') || (inputs.browser_tests && 'browser') || (inputs.remote_tests && 'remote') || 'unknown' }}
       NPM_ARCH: x64
@@ -233,19 +233,19 @@ jobs:
 
       - name: 🧪 Run smoke tests (Electron)
         if: ${{ inputs.electron_tests }}
-        timeout-minutes: 20
+        timeout-minutes: 25
         run: npm run smoketest-no-compile -- --tracing
         env:
           DISPLAY: ":10"
 
       - name: 🧪 Run smoke tests (Browser, Chromium)
         if: ${{ inputs.browser_tests }}
-        timeout-minutes: 20
+        timeout-minutes: 25
         run: npm run smoketest-no-compile -- --web --tracing --headless
 
       - name: 🧪 Run smoke tests (Remote)
         if: ${{ inputs.remote_tests }}
-        timeout-minutes: 20
+        timeout-minutes: 25
         run: npm run smoketest-no-compile -- --remote --tracing
         env:
           DISPLAY: ":10"

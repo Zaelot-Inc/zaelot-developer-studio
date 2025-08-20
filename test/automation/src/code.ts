@@ -249,7 +249,7 @@ export class Code {
 		return this.driver.getElements(selector, recursive);
 	}
 
-	async waitForTextContent(selector: string, textContent?: string, accept?: (result: string) => boolean, retryCount?: number): Promise<string> {
+	async waitForTextContent(selector: string, textContent?: string, accept?: (result: string) => boolean, retryCount: number = 400): Promise<string> {
 		accept = accept || (result => textContent !== undefined ? textContent === result : !!result);
 
 		return await this.poll(
@@ -276,7 +276,7 @@ export class Code {
 		return await this.poll<IElement>(() => this.driver.getElements(selector).then(els => els[0]), accept, `get element '${selector}'`, retryCount);
 	}
 
-	async waitForActiveElement(selector: string, retryCount: number = 200): Promise<void> {
+	async waitForActiveElement(selector: string, retryCount: number = 400): Promise<void> {
 		await this.poll(() => this.driver.isActiveElement(selector), r => r, `is active element '${selector}'`, retryCount);
 	}
 
@@ -285,11 +285,11 @@ export class Code {
 	}
 
 	async waitForTypeInEditor(selector: string, text: string): Promise<void> {
-		await this.poll(() => this.driver.typeInEditor(selector, text), () => true, `type in editor '${selector}'`);
+		await this.poll(() => this.driver.typeInEditor(selector, text), () => true, `type in editor '${selector}'`, 400);
 	}
 
 	async waitForEditorSelection(selector: string, accept: (selection: { selectionStart: number; selectionEnd: number }) => boolean): Promise<void> {
-		await this.poll(() => this.driver.getEditorSelection(selector), accept, `get editor selection '${selector}'`);
+		await this.poll(() => this.driver.getEditorSelection(selector), accept, `get editor selection '${selector}'`, 400);
 	}
 
 	async waitForTerminalBuffer(selector: string, accept: (result: string[]) => boolean): Promise<void> {

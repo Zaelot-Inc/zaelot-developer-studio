@@ -20,7 +20,7 @@ const suite = opts['web'] ? 'Browser Smoke Tests' : 'Desktop Smoke Tests';
 
 const options = {
 	color: true,
-	timeout: 2 * 60 * 1000,
+	timeout: 10 * 60 * 1000, // Increased from 2 to 10 minutes for GitHub Actions
 	slow: 30 * 1000,
 	grep: opts['f'] || opts['g']
 };
