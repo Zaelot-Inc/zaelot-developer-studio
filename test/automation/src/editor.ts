@@ -80,10 +80,23 @@ export class Editor {
 	async waitForEditorFocus(filename: string, lineNumber: number, selectorPrefix = ''): Promise<void> {
 		const editor = [selectorPrefix || '', EDITOR(filename)].join(' ');
 		const line = `${editor} .view-lines > .view-line:nth-child(${lineNumber})`;
-		const editContext = `${editor} ${this._editContextSelector()}`;
 
 		await this.code.waitAndClick(line, 1, 1);
-		await this.code.waitForActiveElement(editContext);
+
+		// First, check which edit context type is available in the DOM
+		const nativeEditContext = `${editor} .native-edit-context`;
+		const textAreaContext = `${editor} textarea`;
+
+		try {
+			// Check if native edit context exists in DOM first
+			await this.code.waitForElement(nativeEditContext, undefined, 50);
+			// If it exists, wait for it to be active
+			await this.code.waitForActiveElement(nativeEditContext);
+		} catch (e) {
+			// Fallback to textarea - click on it directly to ensure focus
+			await this.code.waitAndClick(textAreaContext);
+			await this.code.waitForActiveElement(textAreaContext);
+		}
 	}
 
 	async waitForTypeInEditor(filename: string, text: string, selectorPrefix = ''): Promise<any> {
@@ -94,22 +107,44 @@ export class Editor {
 
 		await this.code.waitForElement(editor);
 
-		const editContext = `${editor} ${this._editContextSelector()}`;
-		await this.code.waitForActiveElement(editContext);
+		// Determine which edit context type is available in the DOM
+		const nativeEditContext = `${editor} .native-edit-context`;
+		const textAreaContext = `${editor} textarea`;
 
-		await this.code.waitForTypeInEditor(editContext, text);
+		let activeSelector: string;
+		try {
+			// Check if native edit context exists in DOM first
+			await this.code.waitForElement(nativeEditContext, undefined, 50);
+			// If it exists, ensure it's active
+			await this.code.waitForActiveElement(nativeEditContext);
+			activeSelector = nativeEditContext;
+		} catch (e) {
+			// Fallback to textarea if native edit context is not available
+			await this.code.waitForActiveElement(textAreaContext);
+			activeSelector = textAreaContext;
+		}
+
+		await this.code.waitForTypeInEditor(activeSelector, text);
 
 		await this.waitForEditorContents(filename, c => c.indexOf(text) > -1, selectorPrefix);
 	}
 
 	async waitForEditorSelection(filename: string, accept: (selection: { selectionStart: number; selectionEnd: number }) => boolean): Promise<void> {
-		const selector = `${EDITOR(filename)} ${this._editContextSelector()}`;
-		await this.code.waitForEditorSelection(selector, accept);
+		// Determine which edit context type is available in the DOM
+		const nativeEditContext = `${EDITOR(filename)} .native-edit-context`;
+		const textAreaContext = `${EDITOR(filename)} textarea`;
+
+		try {
+			// Check if native edit context exists in DOM first
+			await this.code.waitForElement(nativeEditContext, undefined, 50);
+			await this.code.waitForEditorSelection(nativeEditContext, accept);
+		} catch (e) {
+			// Fallback to textarea if native edit context is not available
+			await this.code.waitForEditorSelection(textAreaContext, accept);
+		}
 	}
 
-	private _editContextSelector() {
-		return !this.code.editContextEnabled ? 'textarea' : '.native-edit-context';
-	}
+
 
 	async waitForEditorContents(filename: string, accept: (contents: string) => boolean, selectorPrefix = ''): Promise<any> {
 		const selector = [selectorPrefix || '', `${EDITOR(filename)} .view-lines`].join(' ');

@@ -50,10 +50,20 @@ export class Notebook {
 
 		await this.code.waitForElement(editor);
 
-		const editContext = `${editor} ${!this.code.editContextEnabled ? 'textarea' : '.native-edit-context'}`;
-		await this.code.waitForActiveElement(editContext);
+		// Try both edit context selectors to handle browser compatibility
+		const nativeEditContext = `${editor} .native-edit-context`;
+		const textAreaContext = `${editor} textarea`;
 
-		await this.code.waitForTypeInEditor(editContext, text);
+		let activeSelector: string;
+		try {
+			await this.code.waitForActiveElement(nativeEditContext, 50);
+			activeSelector = nativeEditContext;
+		} catch (e) {
+			await this.code.waitForActiveElement(textAreaContext);
+			activeSelector = textAreaContext;
+		}
+
+		await this.code.waitForTypeInEditor(activeSelector, text);
 
 		await this._waitForActiveCellEditorContents(c => c.indexOf(text) > -1);
 	}

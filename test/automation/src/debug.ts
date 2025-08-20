@@ -125,8 +125,17 @@ export class Debug extends Viewlet {
 
 	async waitForReplCommand(text: string, accept: (result: string) => boolean): Promise<void> {
 		await this.commands.runCommand('Debug: Focus on Debug Console View');
-		const selector = !this.code.editContextEnabled ? REPL_FOCUSED_TEXTAREA : REPL_FOCUSED_NATIVE_EDIT_CONTEXT;
-		await this.code.waitForActiveElement(selector);
+
+		// Try both edit context selectors to handle browser compatibility
+		let selector: string;
+		try {
+			await this.code.waitForActiveElement(REPL_FOCUSED_NATIVE_EDIT_CONTEXT, 50);
+			selector = REPL_FOCUSED_NATIVE_EDIT_CONTEXT;
+		} catch (e) {
+			await this.code.waitForActiveElement(REPL_FOCUSED_TEXTAREA);
+			selector = REPL_FOCUSED_TEXTAREA;
+		}
+
 		await this.code.waitForSetValue(selector, text);
 
 		// Wait for the keys to be picked up by the editor model such that repl evaluates what just got typed

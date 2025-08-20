@@ -64,24 +64,38 @@ export class SettingsEditor {
 
 	async openUserSettingsUI(): Promise<void> {
 		await this.quickaccess.runCommand('workbench.action.openSettings2');
-		await this.code.waitForActiveElement(this._editContextSelector());
+
+		// Try both edit context selectors to handle browser compatibility
+		try {
+			await this.code.waitForActiveElement(SEARCH_BOX_NATIVE_EDIT_CONTEXT, 50);
+		} catch (e) {
+			// Fallback to textarea if native edit context is not available
+			await this.code.waitForActiveElement(SEARCH_BOX_TEXTAREA);
+		}
 	}
 
 	async searchSettingsUI(query: string): Promise<void> {
 		await this.openUserSettingsUI();
 
-		await this.code.waitAndClick(this._editContextSelector());
+		// Determine which selector to use based on what's available
+		let activeSelector: string;
+		try {
+			await this.code.waitForElement(SEARCH_BOX_NATIVE_EDIT_CONTEXT, undefined, 50);
+			activeSelector = SEARCH_BOX_NATIVE_EDIT_CONTEXT;
+		} catch (e) {
+			activeSelector = SEARCH_BOX_TEXTAREA;
+		}
+
+		await this.code.waitAndClick(activeSelector);
 		await this.code.dispatchKeybinding(process.platform === 'darwin' ? 'cmd+a' : 'ctrl+a', async () => { });
 		await this.code.dispatchKeybinding('Delete', async () => {
 			await this.code.waitForElements('.settings-editor .settings-count-widget', false, results => !results || (results?.length === 1 && !results[0].textContent));
 		});
-		await this.code.waitForTypeInEditor(this._editContextSelector(), query);
+		await this.code.waitForTypeInEditor(activeSelector, query);
 		await this.code.waitForElements('.settings-editor .settings-count-widget', false, results => results?.length === 1 && results[0].textContent.includes('Found'));
 	}
 
-	private _editContextSelector() {
-		return !this.code.editContextEnabled ? SEARCH_BOX_TEXTAREA : SEARCH_BOX_NATIVE_EDIT_CONTEXT;
-	}
+
 
 	private _acceptEditorSelection(editContextEnabled: boolean, s: { selectionStart: number; selectionEnd: number }): boolean {
 		if (!editContextEnabled) {

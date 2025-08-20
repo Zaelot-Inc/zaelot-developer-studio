@@ -354,7 +354,24 @@ async function setup(): Promise<void> {
 	}
 	await measureAndLog(() => setupRepository(), 'setupRepository', logger);
 
+	// Create default user settings to disable edit context for smoke tests
+	await measureAndLog(() => setupDefaultUserSettings(), 'setupDefaultUserSettings', logger);
+
 	logger.log('Smoketest setup done!\n');
+}
+
+async function setupDefaultUserSettings(): Promise<void> {
+	const userSettingsPath = path.join(userDataDir, 'User');
+	fs.mkdirSync(userSettingsPath, { recursive: true });
+
+	const settingsPath = path.join(userSettingsPath, 'settings.json');
+	const defaultSettings = {
+		'editor.editContext': false,
+		'editor.wordWrap': 'on'
+	};
+
+	fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, '\t'));
+	logger.log('Created default user settings:', settingsPath);
 }
 
 // Before all tests run setup

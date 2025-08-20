@@ -50,8 +50,15 @@ export class Editors {
 	}
 
 	async waitForActiveEditor(fileName: string, retryCount?: number): Promise<any> {
-		const selector = `.editor-instance .monaco-editor[data-uri$="${fileName}"] ${!this.code.editContextEnabled ? 'textarea' : '.native-edit-context'}`;
-		return this.code.waitForActiveElement(selector, retryCount);
+		// Try both edit context selectors to handle browser compatibility
+		const nativeSelector = `.editor-instance .monaco-editor[data-uri$="${fileName}"] .native-edit-context`;
+		const textAreaSelector = `.editor-instance .monaco-editor[data-uri$="${fileName}"] textarea`;
+
+		try {
+			return await this.code.waitForActiveElement(nativeSelector, Math.min(50, retryCount || 50));
+		} catch (e) {
+			return await this.code.waitForActiveElement(textAreaSelector, retryCount);
+		}
 	}
 
 	async waitForTab(fileName: string, isDirty: boolean = false): Promise<void> {

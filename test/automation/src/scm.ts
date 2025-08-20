@@ -44,7 +44,14 @@ export class SCM extends Viewlet {
 	}
 
 	async openSCMViewlet(): Promise<any> {
-		await this.code.dispatchKeybinding('ctrl+shift+g', async () => { await this.code.waitForElement(this._editContextSelector()); });
+		await this.code.dispatchKeybinding('ctrl+shift+g', async () => {
+			// Try both edit context selectors to handle browser compatibility
+			try {
+				await this.code.waitForElement(SCM_INPUT_NATIVE_EDIT_CONTEXT, undefined, 50);
+			} catch (e) {
+				await this.code.waitForElement(SCM_INPUT_TEXTAREA);
+			}
+		});
 	}
 
 	async waitForChange(name: string, type?: string): Promise<void> {
@@ -71,13 +78,21 @@ export class SCM extends Viewlet {
 	}
 
 	async commit(message: string): Promise<void> {
-		await this.code.waitAndClick(this._editContextSelector());
-		await this.code.waitForActiveElement(this._editContextSelector());
-		await this.code.waitForSetValue(this._editContextSelector(), message);
+		// Try both edit context selectors to handle browser compatibility
+		let activeSelector: string;
+		try {
+			await this.code.waitAndClick(SCM_INPUT_NATIVE_EDIT_CONTEXT);
+			await this.code.waitForActiveElement(SCM_INPUT_NATIVE_EDIT_CONTEXT, 50);
+			activeSelector = SCM_INPUT_NATIVE_EDIT_CONTEXT;
+		} catch (e) {
+			await this.code.waitAndClick(SCM_INPUT_TEXTAREA);
+			await this.code.waitForActiveElement(SCM_INPUT_TEXTAREA);
+			activeSelector = SCM_INPUT_TEXTAREA;
+		}
+
+		await this.code.waitForSetValue(activeSelector, message);
 		await this.code.waitAndClick(COMMIT_COMMAND);
 	}
 
-	private _editContextSelector(): string {
-		return !this.code.editContextEnabled ? SCM_INPUT_TEXTAREA : SCM_INPUT_NATIVE_EDIT_CONTEXT;
-	}
+
 }

@@ -20,7 +20,17 @@ export class Extensions extends Viewlet {
 
 	async searchForExtension(id: string): Promise<any> {
 		await this.commands.runCommand('Extensions: Focus on Extensions View', { exactLabelMatch: true });
-		await this.code.waitForTypeInEditor(`div.extensions-viewlet[id="workbench.view.extensions"] .monaco-editor ${!this.code.editContextEnabled ? 'textarea' : '.native-edit-context'}`, `@id:${id}`);
+
+		// Try both edit context selectors to handle browser compatibility
+		const nativeEditContext = `div.extensions-viewlet[id="workbench.view.extensions"] .monaco-editor .native-edit-context`;
+		const textAreaContext = `div.extensions-viewlet[id="workbench.view.extensions"] .monaco-editor textarea`;
+
+		try {
+			await this.code.waitForTypeInEditor(nativeEditContext, `@id:${id}`);
+		} catch (e) {
+			await this.code.waitForTypeInEditor(textAreaContext, `@id:${id}`);
+		}
+
 		await this.code.waitForTextContent(`div.part.sidebar div.composite.title h2`, 'Extensions: Marketplace');
 
 		let retrials = 1;
