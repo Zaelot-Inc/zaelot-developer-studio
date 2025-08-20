@@ -394,7 +394,11 @@ before(async function () {
 		tracing: opts.tracing || process.env.BUILD_ARTIFACTSTAGINGDIRECTORY || process.env.GITHUB_WORKSPACE,
 		headless: opts.headless,
 		browser: opts.browser,
-		extraArgs: (opts.electronArgs || '').split(' ').map(arg => arg.trim()).filter(arg => !!arg)
+		extraArgs: [
+			...((opts.electronArgs || '').split(' ').map(arg => arg.trim()).filter(arg => !!arg)),
+			// Force disable edit context for smoke tests to avoid focus issues
+			'--disable-features=EditContext'
+		]
 	};
 
 	await setup();

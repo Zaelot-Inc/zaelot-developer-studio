@@ -61,7 +61,7 @@ export class Workbench {
 		this.debug = new Debug(code, this.quickaccess, this.editors, this.editor);
 		this.statusbar = new StatusBar(code);
 		this.problems = new Problems(code, this.quickaccess);
-		this.settingsEditor = new SettingsEditor(code, this.editors, this.editor, this.quickaccess);
+		this.settingsEditor = new SettingsEditor(code, this.editors, this.quickaccess);
 		this.keybindingsEditor = new KeybindingsEditor(code);
 		this.terminal = new Terminal(code, this.quickaccess, this.quickinput);
 		this.notebook = new Notebook(this.quickaccess, this.quickinput, code);

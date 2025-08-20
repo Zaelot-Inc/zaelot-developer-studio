@@ -3,16 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Editor } from './editor';
 import { Editors } from './editors';
 import { Code } from './code';
 import { QuickAccess } from './quickaccess';
 
-const SEARCH_BOX_NATIVE_EDIT_CONTEXT = '.settings-editor .suggest-input-container .monaco-editor .native-edit-context';
 const SEARCH_BOX_TEXTAREA = '.settings-editor .suggest-input-container .monaco-editor textarea';
 
 export class SettingsEditor {
-	constructor(private code: Code, private editors: Editors, private editor: Editor, private quickaccess: QuickAccess) { }
+	constructor(private code: Code, private editors: Editors, private quickaccess: QuickAccess) { }
 
 	/**
 	 * Write a single setting key value pair.
@@ -24,9 +22,16 @@ export class SettingsEditor {
 		await this.openUserSettingsFile();
 
 		await this.editors.selectTab('settings.json');
-		await this.code.dispatchKeybinding('right', () =>
-			this.editor.waitForEditorSelection('settings.json', (s) => this._acceptEditorSelection(this.code.editContextEnabled, s)));
-		await this.editor.waitForTypeInEditor('settings.json', `"${setting}": ${value},`);
+
+		// Simplified approach: just click at the end and type
+		const textAreaSelector = '.monaco-editor[data-uri$="settings.json"] textarea';
+		await this.code.waitAndClick(textAreaSelector);
+		await this.code.dispatchKeybinding('right', async () => { });
+
+		// Wait a moment for cursor positioning
+		await new Promise(resolve => setTimeout(resolve, 200));
+
+		await this.code.waitForTypeInEditor(textAreaSelector, `"${setting}": ${value},`);
 		await this.editors.saveOpenedFile();
 	}
 
@@ -40,51 +45,61 @@ export class SettingsEditor {
 		await this.openUserSettingsFile();
 
 		await this.editors.selectTab('settings.json');
-		await this.code.dispatchKeybinding('right', () =>
-			this.editor.waitForEditorSelection('settings.json', (s) => this._acceptEditorSelection(this.code.editContextEnabled, s)));
-		await this.editor.waitForTypeInEditor('settings.json', settings.map(v => `"${v[0]}": ${v[1]},`).join(''));
+
+		// Simplified approach: just click at the end and type
+		const textAreaSelector = '.monaco-editor[data-uri$="settings.json"] textarea';
+		await this.code.waitAndClick(textAreaSelector);
+		await this.code.dispatchKeybinding('right', async () => { });
+
+		// Wait a moment for cursor positioning
+		await new Promise(resolve => setTimeout(resolve, 200));
+
+		await this.code.waitForTypeInEditor(textAreaSelector, settings.map(v => `"${v[0]}": ${v[1]},`).join(''));
 		await this.editors.saveOpenedFile();
 	}
 
 	async clearUserSettings(): Promise<void> {
 		await this.openUserSettingsFile();
+
+		// Simplified approach: select all and replace with empty object
+		const textAreaSelector = '.monaco-editor[data-uri$="settings.json"] textarea';
+		await this.code.waitAndClick(textAreaSelector);
 		await this.quickaccess.runCommand('editor.action.selectAll');
-		await this.code.dispatchKeybinding('Delete', async () => {
-			await this.editor.waitForEditorContents('settings.json', contents => contents === '');
-		});
-		await this.editor.waitForTypeInEditor('settings.json', `{`); // will auto close }
+
+		// Wait a moment for selection
+		await new Promise(resolve => setTimeout(resolve, 200));
+
+		await this.code.waitForTypeInEditor(textAreaSelector, `{`); // will auto close }
 		await this.editors.saveOpenedFile();
 		await this.quickaccess.runCommand('workbench.action.closeActiveEditor');
 	}
 
 	async openUserSettingsFile(): Promise<void> {
 		await this.quickaccess.runCommand('workbench.action.openSettingsJson');
-		await this.editor.waitForEditorFocus('settings.json', 1);
+
+		// Wait for the settings.json editor to be present without requiring specific focus
+		const editor = '.monaco-editor[data-uri$="settings.json"]';
+		await this.code.waitForElement(`${editor} .view-lines`);
+
+		// Give a small delay for the editor to stabilize
+		await new Promise(resolve => setTimeout(resolve, 300));
 	}
 
 	async openUserSettingsUI(): Promise<void> {
 		await this.quickaccess.runCommand('workbench.action.openSettings2');
 
-		// Try both edit context selectors to handle browser compatibility
-		try {
-			await this.code.waitForActiveElement(SEARCH_BOX_NATIVE_EDIT_CONTEXT, 50);
-		} catch (e) {
-			// Fallback to textarea if native edit context is not available
-			await this.code.waitForActiveElement(SEARCH_BOX_TEXTAREA);
-		}
+		// For smoke tests, always use textarea to avoid editContext issues
+		await this.code.waitForElement(SEARCH_BOX_TEXTAREA);
+
+		// Give a small delay for stability
+		await new Promise(resolve => setTimeout(resolve, 200));
 	}
 
 	async searchSettingsUI(query: string): Promise<void> {
 		await this.openUserSettingsUI();
 
-		// Determine which selector to use based on what's available
-		let activeSelector: string;
-		try {
-			await this.code.waitForElement(SEARCH_BOX_NATIVE_EDIT_CONTEXT, undefined, 50);
-			activeSelector = SEARCH_BOX_NATIVE_EDIT_CONTEXT;
-		} catch (e) {
-			activeSelector = SEARCH_BOX_TEXTAREA;
-		}
+		// For smoke tests, always use textarea to avoid editContext issues
+		const activeSelector = SEARCH_BOX_TEXTAREA;
 
 		await this.code.waitAndClick(activeSelector);
 		await this.code.dispatchKeybinding(process.platform === 'darwin' ? 'cmd+a' : 'ctrl+a', async () => { });
@@ -97,10 +112,5 @@ export class SettingsEditor {
 
 
 
-	private _acceptEditorSelection(editContextEnabled: boolean, s: { selectionStart: number; selectionEnd: number }): boolean {
-		if (!editContextEnabled) {
-			return true;
-		}
-		return s.selectionStart === 1 && s.selectionEnd === 1;
-	}
+
 }

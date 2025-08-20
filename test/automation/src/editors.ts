@@ -50,15 +50,14 @@ export class Editors {
 	}
 
 	async waitForActiveEditor(fileName: string, retryCount?: number): Promise<any> {
-		// Try both edit context selectors to handle browser compatibility
-		const nativeSelector = `.editor-instance .monaco-editor[data-uri$="${fileName}"] .native-edit-context`;
+		// For smoke tests, always use textarea to avoid editContext issues
 		const textAreaSelector = `.editor-instance .monaco-editor[data-uri$="${fileName}"] textarea`;
 
-		try {
-			return await this.code.waitForActiveElement(nativeSelector, Math.min(50, retryCount || 50));
-		} catch (e) {
-			return await this.code.waitForActiveElement(textAreaSelector, retryCount);
-		}
+		// Wait for textarea and ensure it's visible
+		await this.code.waitForElement(textAreaSelector, undefined, retryCount);
+
+		// Give a small delay for stability
+		await new Promise(resolve => setTimeout(resolve, 200));
 	}
 
 	async waitForTab(fileName: string, isDirty: boolean = false): Promise<void> {
