@@ -25,7 +25,8 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 
 	constructor(
 		private readonly claudeApiClient: IClaudeApiClient,
-		private readonly logService: ILogService
+		private readonly logService: ILogService,
+		private readonly vendorId: string = 'claude' // Accept vendor as parameter
 	) {
 		super();
 
@@ -35,7 +36,9 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 		}));
 	}
 
-	async prepareLanguageModelChat(options: { silent: boolean }, token: CancellationToken): Promise<ILanguageModelChatMetadataAndIdentifier[]> {
+	async prepareLanguageModelChat(options: {
+		silent: boolean;
+	}, token: CancellationToken): Promise<ILanguageModelChatMetadataAndIdentifier[]> {
 		if (!this.claudeApiClient.isConfigured()) {
 			if (!options.silent) {
 				this.logService.warn('Claude API client is not configured');
@@ -57,7 +60,7 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 			}
 		}
 
-		// Return available Claude models
+		// Return available Claude models - use the vendor passed in constructor
 		return Object.entries(CLAUDE_MODELS).map(([id, modelInfo]) => ({
 			identifier: `claude-${id}`,
 			metadata: {
@@ -65,12 +68,12 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 				id: id as ClaudeModelId,
 				name: modelInfo.name,
 				family: modelInfo.family,
-				vendor: 'anthropic',
+				vendor: this.vendorId, // Use the vendor ID passed to constructor
 				description: `${modelInfo.name} - Advanced AI assistant by Anthropic`,
 				version: id.split('-').pop() || '1.0',
 				maxInputTokens: modelInfo.maxInputTokens,
 				maxOutputTokens: modelInfo.maxOutputTokens,
-				isDefault: id === 'claude-3-5-sonnet-20241022',
+				isDefault: id === 'claude-sonnet-4-20250514',
 				isUserSelectable: true,
 				modelPickerCategory: { label: 'Claude', order: 1 }
 			}
@@ -109,15 +112,18 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 					tools,
 					toolChoice: options.toolMode ? { type: 'auto' } : undefined
 				},
-				undefined, // No streaming for now
+				undefined, // No streaming callback - not supported in browser context
 				token
 			);
 
 			this.logService.info(`Claude response completed. Tokens used: ${claudeResponse.usage?.input_tokens || 0} input, ${claudeResponse.usage?.output_tokens || 0} output`);
 
+			// Create a simple response stream that immediately yields the complete response
+			const responseText = claudeResponse.content?.[0]?.text || '';
+
 			return {
-				stream: this._createResponseStream(claudeResponse.content?.[0]?.text || ''),
-				result: Promise.resolve(claudeResponse.content?.[0]?.text || '')
+				stream: this._createResponseStream(responseText),
+				result: Promise.resolve(responseText)
 			};
 
 		} catch (error) {
@@ -171,16 +177,23 @@ export class ClaudeLanguageModelProvider extends Disposable implements ILanguage
 
 			// Fallback to string conversion - msg.content should be an array
 			const contentArray = Array.isArray(msg.content) ? msg.content : [];
-			return { role, content: contentArray.map((p: any) => p.type === 'text' ? p.value : '').join('') };
+			return {
+				role,
+				content: contentArray.map((p: any) => p.type === 'text' ? p.value : '').join('')
+			};
 		});
 	}
 
 	private _convertRole(role: ChatMessageRole): 'system' | 'user' | 'assistant' {
 		switch (role) {
-			case ChatMessageRole.System: return 'system';
-			case ChatMessageRole.User: return 'user';
-			case ChatMessageRole.Assistant: return 'assistant';
-			default: return 'user';
+			case ChatMessageRole.System:
+				return 'system';
+			case ChatMessageRole.User:
+				return 'user';
+			case ChatMessageRole.Assistant:
+				return 'assistant';
+			default:
+				return 'user';
 		}
 	}
 

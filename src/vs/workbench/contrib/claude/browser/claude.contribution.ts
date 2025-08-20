@@ -15,7 +15,9 @@ import { IClaudeConfigurationService, ClaudeConfigurationService } from './claud
 import { ClaudeLanguageModelProvider } from '../common/claudeLanguageModelProvider.js';
 
 import { ILogService } from '../../../../platform/log/common/log.js';
-import { ILanguageModelsService } from '../../chat/common/languageModels.js';
+import {
+	ILanguageModelsService
+} from '../../chat/common/languageModels.js';
 import './claudeCommands.js';
 
 class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContribution {
@@ -30,7 +32,8 @@ class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContri
 	) {
 		super();
 
-		this._initialize();
+		// Delay initialization to ensure vendor is registered
+		setTimeout(() => this._initialize(), 1000);
 	}
 
 	private async _initialize(): Promise<void> {
@@ -68,17 +71,39 @@ class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContri
 				this.claudeProvider.dispose();
 			}
 
+			// Create provider with 'claude' vendor
 			this.claudeProvider = new ClaudeLanguageModelProvider(
 				this.claudeApiClient,
-				this.logService
+				this.logService,
+				'claude' // Use 'claude' as the vendor
 			);
 
 			// Register with the language models service
 			this._register(this.languageModelsService.registerLanguageModelProvider('claude', this.claudeProvider));
 
-			this.logService.info('Claude language model provider registered');
+			this.logService.info('Claude language model provider registered successfully');
+
 		} catch (error) {
-			this.logService.warn('Failed to register Claude language model provider:', error);
+			this.logService.error('Failed to register Claude language model provider:', error);
+
+			// Alternative approach: Try to register the vendor directly in the service
+			try {
+				const serviceAny = this.languageModelsService as any;
+				if (serviceAny._vendors) {
+					serviceAny._vendors.set('claude', {
+						vendor: 'claude',
+						name: 'Claude AI',
+						description: 'Claude AI language models by Anthropic'
+					});
+					this.logService.info('Claude vendor registered directly in service');
+
+					// Now try to register the provider again
+					this._register(this.languageModelsService.registerLanguageModelProvider('claude', this.claudeProvider!));
+					this.logService.info('Claude language model provider registered successfully after direct vendor registration');
+				}
+			} catch (directError) {
+				this.logService.error('Direct vendor registration also failed:', directError);
+			}
 		}
 	}
 }
@@ -105,16 +130,16 @@ configurationRegistry.registerConfiguration({
 		},
 		'claude.model': {
 			type: 'string',
-			default: 'claude-3-5-sonnet-20241022',
+			default: 'claude-sonnet-4-20250514',
 			enum: [
-				'claude-3-5-sonnet-20241022',
-				'claude-3-5-haiku-20241022',
-				'claude-3-opus-20240229'
+				'claude-sonnet-4-20250514',
+				'claude-3-7-sonnet-20250219',
+				'claude-opus-4-20250514'
 			],
 			enumDescriptions: [
-				'Claude 3.5 Sonnet - Most capable model',
-				'Claude 3.5 Haiku - Fastest model',
-				'Claude 3 Opus - Most powerful model'
+				'Claude Sonnet 4 - Most capable model',
+				'Claude Sonnet 3.7 - Fastest model',
+				'Claude Opus 4 - Most powerful model'
 			],
 			description: 'Default Claude model to use'
 		},

@@ -6,7 +6,11 @@
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { Emitter } from '../../../../base/common/event.js';
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
-import { IClaudeConfiguration, IClaudeMessage, IClaudeResponse, IClaudeStreamResponse, ClaudeModelId } from './claudeTypes.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { IMainProcessService } from '../../../../platform/ipc/common/mainProcessService.js';
+import {
+	IClaudeConfiguration, IClaudeMessage, IClaudeResponse, IClaudeStreamResponse, ClaudeModelId
+} from './claudeTypes.js';
 
 export const IClaudeApiClient = createDecorator<IClaudeApiClient>('claudeApiClient');
 
@@ -62,16 +66,28 @@ export class ClaudeApiClient implements IClaudeApiClient {
 	private readonly _onDidChangeConfiguration = new Emitter<void>();
 	readonly onDidChangeConfiguration = this._onDidChangeConfiguration.event;
 
-	constructor() {
+	constructor(
+		@ILogService private readonly logService: ILogService,
+		@IMainProcessService private readonly mainProcessService: IMainProcessService
+	) {
 	}
 
 	configure(config: IClaudeConfiguration): void {
 		this._configuration = { ...config };
+		this.logService.trace('[Claude] API client configured', {
+			hasApiKey: !!config.apiKey,
+			baseUrl: config.baseUrl || 'https://api.anthropic.com',
+			model: config.model,
+			maxTokens: config.maxTokens,
+			temperature: config.temperature
+		});
 		this._onDidChangeConfiguration.fire();
 	}
 
 	isConfigured(): boolean {
-		return !!this._configuration?.apiKey;
+		const configured = !!this._configuration?.apiKey;
+		this.logService.trace('[Claude] Configuration check:', { configured });
+		return configured;
 	}
 
 	async sendMessage(
@@ -87,48 +103,37 @@ export class ClaudeApiClient implements IClaudeApiClient {
 		token?: CancellationToken
 	): Promise<IClaudeResponse> {
 		if (!this._configuration) {
+			this.logService.error('[Claude] API client is not configured');
 			throw new Error('Claude API client is not configured');
 		}
 
-		const requestBody = {
+		this.logService.info('[Claude] Sending message via IPC', {
 			model,
-			max_tokens: options.maxTokens || this._configuration.maxTokens || 4096,
-			temperature: options.temperature ?? this._configuration.temperature ?? 0.7,
-			messages: messages.filter(m => m.role !== 'system'),
-			system: messages.find(m => m.role === 'system')?.content,
-			stream: !!onProgress,
-			...(options.tools && { tools: options.tools }),
-			...(options.toolChoice && { tool_choice: options.toolChoice })
-		};
-
-		const baseUrl = this._configuration.baseUrl || 'https://api.anthropic.com';
-		const url = `${baseUrl}/v1/messages`;
-
-		const headers = {
-			'Content-Type': 'application/json',
-			'x-api-key': this._configuration.apiKey,
-			'anthropic-version': '2023-06-01'
-		};
+			messageCount: messages.length,
+			hasTools: !!options.tools,
+			streaming: !!onProgress,
+			maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
+			temperature: options.temperature ?? this._configuration.temperature ?? 0.7
+		});
 
 		try {
-			const response = await fetch(url, {
-				method: 'POST',
-				headers,
-				body: JSON.stringify(requestBody),
-				signal: token?.onCancellationRequested ? AbortSignal.timeout(30000) : undefined
-			});
-
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(`Claude API error: ${response.status} ${response.statusText} - ${errorText}`);
-			}
-
+			// Use IPC to call main process instead of direct fetch
 			if (onProgress) {
-				return this._handleStreamingResponse(response, onProgress, token);
+				return await this._sendStreamingMessage(messages, model, options, onProgress, token);
 			} else {
-				return await response.json() as IClaudeResponse;
+				const channel = this.mainProcessService.getChannel('claude');
+				return await channel.call('sendMessage', [
+					this._configuration,
+					messages,
+					{
+						...options,
+						maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
+						temperature: options.temperature ?? this._configuration.temperature ?? 0.7
+					}
+				]) as IClaudeResponse;
 			}
 		} catch (error) {
+			this.logService.error('[Claude] IPC sendMessage failed:', error);
 			if (token?.isCancellationRequested) {
 				throw new Error('Request was cancelled');
 			}
@@ -136,91 +141,103 @@ export class ClaudeApiClient implements IClaudeApiClient {
 		}
 	}
 
-	private async _handleStreamingResponse(
-		response: Response,
+	private async _sendStreamingMessage(
+		messages: IClaudeMessage[],
+		model: ClaudeModelId,
+		options: {
+			maxTokens?: number;
+			temperature?: number;
+			tools?: any[];
+			toolChoice?: any;
+		},
 		onProgress: (chunk: IClaudeStreamResponse) => void,
 		token?: CancellationToken
 	): Promise<IClaudeResponse> {
-		const reader = response.body?.getReader();
-		if (!reader) {
-			throw new Error('No response body');
+		this.logService.info('[Claude] Sending streaming message via IPC');
+
+		if (!this._configuration) {
+			throw new Error('Claude API client is not configured');
 		}
 
-		const decoder = new TextDecoder();
-		let buffer = '';
-		let finalResponse: IClaudeResponse | undefined;
+		// Setup streaming progress listener
+		const progressListener = (_event: unknown, chunk: string) => {
+			onProgress({
+				type: 'content_block_delta',
+				delta: {
+					type: 'text_delta',
+					text: chunk
+				}
+			});
+		};
+
+		// Add listener for streaming progress
+		const ipcRenderer = (globalThis as any).electronBridge?.ipcRenderer;
+		if (ipcRenderer) {
+			ipcRenderer.on('claude:streamingProgress', progressListener);
+		}
 
 		try {
-			while (true) {
-				if (token?.isCancellationRequested) {
-					throw new Error('Request was cancelled');
-				}
-
-				const { done, value } = await reader.read();
-				if (done) {
-					break;
-				}
-
-				buffer += decoder.decode(value, { stream: true });
-				const lines = buffer.split('\n');
-				buffer = lines.pop() || '';
-
-				for (const line of lines) {
-					if (line.startsWith('data: ')) {
-						const data = line.slice(6);
-						if (data === '[DONE]') {
-							continue;
-						}
-
-						try {
-							const chunk = JSON.parse(data) as IClaudeStreamResponse;
-							onProgress(chunk);
-
-							// Build final response from chunks
-							if (chunk.type === 'message_start' && chunk.message) {
-								finalResponse = chunk.message as IClaudeResponse;
-							} else if (chunk.type === 'content_block_delta' && chunk.delta && finalResponse) {
-								if (!finalResponse.content) {
-									finalResponse.content = [{ type: 'text', text: '' }];
-								}
-								if (finalResponse.content[0]) {
-									finalResponse.content[0].text += chunk.delta.text;
-								}
-							} else if (chunk.type === 'message_delta' && chunk.usage && finalResponse) {
-								finalResponse.usage = chunk.usage;
-							}
-						} catch (e) {
-							// Skip invalid JSON chunks
-						}
+			// Use direct IPC for streaming messages since callbacks can't be passed through channels
+			if (ipcRenderer) {
+				const result = await ipcRenderer.invoke('claude:sendStreamingMessage',
+					this._configuration,
+					messages,
+					{
+						...options,
+						maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
+						temperature: options.temperature ?? this._configuration.temperature ?? 0.7
 					}
-				}
+				) as IClaudeResponse;
+				return result;
+			} else {
+				// Fallback to channel system without streaming
+				const channel = this.mainProcessService.getChannel('claude');
+				const result = await channel.call('sendMessage', [
+					this._configuration,
+					messages,
+					{
+						...options,
+						maxTokens: options.maxTokens || this._configuration.maxTokens || 4096,
+						temperature: options.temperature ?? this._configuration.temperature ?? 0.7
+					}
+				]) as IClaudeResponse;
+				return result;
 			}
 		} finally {
-			reader.releaseLock();
+			// Cleanup listener
+			if (ipcRenderer) {
+				ipcRenderer.removeListener('claude:streamingProgress', progressListener);
+			}
 		}
-
-		if (!finalResponse) {
-			throw new Error('No valid response received from Claude API');
-		}
-
-		return finalResponse;
 	}
+
+
 
 	estimateTokens(text: string): number {
 		// Rough estimation: ~4 characters per token for English text
-		return Math.ceil(text.length / 4);
+		const estimate = Math.ceil(text.length / 4);
+		this.logService.trace('[Claude] Token estimation', {
+			textLength: text.length,
+			estimatedTokens: estimate
+		});
+		return estimate;
 	}
 
 	async testConnection(token?: CancellationToken): Promise<boolean> {
-		try {
-			const testMessage: IClaudeMessage = {
-				role: 'user',
-				content: 'Hello'
-			};
+		if (!this._configuration) {
+			this.logService.error('[Claude] API client is not configured');
+			return false;
+		}
 
-			await this.sendMessage([testMessage], 'claude-3-5-haiku-20241022', { maxTokens: 10 }, undefined, token);
-			return true;
+		this.logService.info('[Claude] Testing API connection via IPC');
+
+		try {
+			const channel = this.mainProcessService.getChannel('claude');
+			const result = await channel.call('testConnection', [this._configuration]) as boolean;
+			this.logService.info('[Claude] Connection test successful');
+			return result;
 		} catch (error) {
+			this.logService.error('[Claude] Connection test failed', error);
 			return false;
 		}
 	}
