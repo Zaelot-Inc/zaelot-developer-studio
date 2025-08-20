@@ -7,6 +7,12 @@ if [ "$SKIP_REMOTE_TESTS" = "1" ]; then
 	exit 0
 fi
 
+# Auto-skip in development mode to avoid download issues
+if grep -q '"commit": "zaelot-dev"' "$(dirname $(dirname $(realpath "$0")))/product.json" 2>/dev/null; then
+	echo "### Skipping remote integration tests (development mode detected)"
+	exit 0
+fi
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
 	realpath() { [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"; }
 	ROOT=$(dirname $(dirname $(realpath "$0")))
@@ -55,6 +61,9 @@ fi
 
 export TESTRESOLVER_DATA_FOLDER=$TESTRESOLVER_DATA_FOLDER
 export TESTRESOLVER_LOGS_FOLDER=$VSCODELOGSDIR/server
+
+# Force development mode to avoid downloading VS Code Server
+export CI=1
 
 # Figure out which remote server to use for running tests
 if [ -z "$VSCODE_REMOTE_SERVER_PATH" ]

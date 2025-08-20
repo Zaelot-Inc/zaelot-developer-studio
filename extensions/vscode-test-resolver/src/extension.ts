@@ -158,7 +158,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			commandArgs.push('--connection-token', connectionToken);
 
-			if (!commit) { // dev mode
+			if (!commit || process.env['GITHUB_ACTIONS'] || process.env['CI'] || commit === 'zaelot-dev') { // dev mode or CI environment
 				const serverCommand = process.platform === 'win32' ? 'code-server.bat' : 'code-server.sh';
 				const vscodePath = path.resolve(path.join(context.extensionPath, '..', '..'));
 				const serverCommandPath = path.join(vscodePath, 'scripts', serverCommand);
