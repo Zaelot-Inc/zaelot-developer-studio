@@ -4,7 +4,7 @@ on:
   pull_request:
     branches:
       - main
-      - 'release/*'
+      - "release/*"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -13,12 +13,12 @@ concurrency:
 permissions: {}
 
 env:
-  VSCODE_QUALITY: 'oss'
+  VSCODE_QUALITY: "oss"
 
 jobs:
   compile:
     name: Compile & Hygiene
-    runs-on: [ self-hosted, 1ES.Pool=1es-vscode-oss-ubuntu-22.04-x64 ]
+    runs-on: [self-hosted, 1ES.Pool=1es-vscode-oss-ubuntu-22.04-x64]
     steps:
       - name: Checkout microsoft/vscode
         uses: actions/checkout@v4
@@ -93,40 +93,13 @@ jobs:
       job_name: CLI
       rustup_toolchain: 1.85
 
-  linux-electron-tests:
-    name: Linux
-    uses: ./.github/workflows/pr-linux-test.yml
-    with:
-      job_name: Electron
-      electron_tests: true
-
-  linux-browser-tests:
-    name: Linux
-    uses: ./.github/workflows/pr-linux-test.yml
-    with:
-      job_name: Browser
-      browser_tests: true
-
+  # Phase 1: Remote tests (run first)
   linux-remote-tests:
     name: Linux
     uses: ./.github/workflows/pr-linux-test.yml
     with:
       job_name: Remote
       remote_tests: true
-
-  macos-electron-tests:
-    name: macOS
-    uses: ./.github/workflows/pr-darwin-test.yml
-    with:
-      job_name: Electron
-      electron_tests: true
-
-  macos-browser-tests:
-    name: macOS
-    uses: ./.github/workflows/pr-darwin-test.yml
-    with:
-      job_name: Browser
-      browser_tests: true
 
   macos-remote-tests:
     name: macOS
@@ -135,23 +108,59 @@ jobs:
       job_name: Remote
       remote_tests: true
 
-  windows-electron-tests:
-    name: Windows
-    uses: ./.github/workflows/pr-win32-test.yml
-    with:
-      job_name: Electron
-      electron_tests: true
-
-  windows-browser-tests:
-    name: Windows
-    uses: ./.github/workflows/pr-win32-test.yml
-    with:
-      job_name: Browser
-      browser_tests: true
-
   windows-remote-tests:
     name: Windows
     uses: ./.github/workflows/pr-win32-test.yml
     with:
       job_name: Remote
       remote_tests: true
+
+  # Phase 2: Browser tests (run after remote tests complete)
+  linux-browser-tests:
+    name: Linux
+    needs: [linux-remote-tests, macos-remote-tests, windows-remote-tests]
+    uses: ./.github/workflows/pr-linux-test.yml
+    with:
+      job_name: Browser
+      browser_tests: true
+
+  macos-browser-tests:
+    name: macOS
+    needs: [linux-remote-tests, macos-remote-tests, windows-remote-tests]
+    uses: ./.github/workflows/pr-darwin-test.yml
+    with:
+      job_name: Browser
+      browser_tests: true
+
+  windows-browser-tests:
+    name: Windows
+    needs: [linux-remote-tests, macos-remote-tests, windows-remote-tests]
+    uses: ./.github/workflows/pr-win32-test.yml
+    with:
+      job_name: Browser
+      browser_tests: true
+
+  # Phase 3: Electron tests (run after browser tests complete)
+  linux-electron-tests:
+    name: Linux
+    needs: [linux-browser-tests, macos-browser-tests, windows-browser-tests]
+    uses: ./.github/workflows/pr-linux-test.yml
+    with:
+      job_name: Electron
+      electron_tests: true
+
+  macos-electron-tests:
+    name: macOS
+    needs: [linux-browser-tests, macos-browser-tests, windows-browser-tests]
+    uses: ./.github/workflows/pr-darwin-test.yml
+    with:
+      job_name: Electron
+      electron_tests: true
+
+  windows-electron-tests:
+    name: Windows
+    needs: [linux-browser-tests, macos-browser-tests, windows-browser-tests]
+    uses: ./.github/workflows/pr-win32-test.yml
+    with:
+      job_name: Electron
+      electron_tests: true
