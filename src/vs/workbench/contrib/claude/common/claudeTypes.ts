@@ -59,11 +59,27 @@ export interface IClaudeStreamResponse {
 }
 
 export const CLAUDE_MODELS = {
-	'claude-3-5-sonnet-20241022': {
-		name: 'Claude 3.5 Sonnet',
-		family: 'claude-3-5',
+	'claude-sonnet-4-20250514': {
+		name: 'Claude Sonnet 4',
+		family: 'claude-4-0',
 		maxInputTokens: 200000,
-		maxOutputTokens: 8192,
+		maxOutputTokens: 64000,
+		supportsVision: true,
+		supportsTools: true
+	},
+	'claude-opus-4-20250514': {
+		name: 'Claude Opus 4',
+		family: 'claude-4-0',
+		maxInputTokens: 200000,
+		maxOutputTokens: 32000,
+		supportsVision: true,
+		supportsTools: true
+	},
+	'claude-3-7-sonnet-20250219': {
+		name: 'Claude Sonnet 3.7',
+		family: 'claude-3-7',
+		maxInputTokens: 200000,
+		maxOutputTokens: 64000,
 		supportsVision: true,
 		supportsTools: true
 	},
@@ -72,14 +88,6 @@ export const CLAUDE_MODELS = {
 		family: 'claude-3-5',
 		maxInputTokens: 200000,
 		maxOutputTokens: 8192,
-		supportsVision: true,
-		supportsTools: true
-	},
-	'claude-3-opus-20240229': {
-		name: 'Claude 3 Opus',
-		family: 'claude-3',
-		maxInputTokens: 200000,
-		maxOutputTokens: 4096,
 		supportsVision: true,
 		supportsTools: true
 	}

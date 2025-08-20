@@ -122,6 +122,9 @@ import { NativeMcpDiscoveryHelperService } from '../../platform/mcp/node/nativeM
 import { IWebContentExtractorService } from '../../platform/webContentExtractor/common/webContentExtractor.js';
 import { NativeWebContentExtractorService } from '../../platform/webContentExtractor/electron-main/webContentExtractorService.js';
 import ErrorTelemetry from '../../platform/telemetry/electron-main/errorTelemetry.js';
+import { IClaudeIpcChannels, ClaudeIpcChannels } from './claudeIpc.js';
+import { IClaudeMainService, ClaudeMainService } from './claudeMainService.js';
+import { ClaudeChannel } from './claudeChannel.js';
 
 /**
  * The main VS Code application. There will only ever be one instance,
@@ -1110,6 +1113,12 @@ export class CodeApplication extends Disposable {
 		// Dev Only: CSS service (for ESM)
 		services.set(ICSSDevelopmentService, new SyncDescriptor(CSSDevelopmentService, undefined, true));
 
+		// Claude Main Service
+		services.set(IClaudeMainService, new SyncDescriptor(ClaudeMainService, undefined, true));
+
+		// Claude IPC Channels
+		services.set(IClaudeIpcChannels, new SyncDescriptor(ClaudeIpcChannels, undefined, true));
+
 		// Init services that require it
 		await Promises.settled([
 			backupMainService.initialize(),
@@ -1222,6 +1231,10 @@ export class CodeApplication extends Disposable {
 		// MCP
 		const mcpDiscoveryChannel = ProxyChannel.fromService(accessor.get(INativeMcpDiscoveryHelperService), disposables);
 		mainProcessElectronServer.registerChannel(NativeMcpDiscoveryHelperChannelName, mcpDiscoveryChannel);
+
+		// Claude
+		const claudeChannel = new ClaudeChannel(accessor.get(IClaudeMainService));
+		mainProcessElectronServer.registerChannel('claude', claudeChannel);
 
 		// Logger
 		const loggerChannel = new LoggerChannel(accessor.get(ILoggerMainService),);
