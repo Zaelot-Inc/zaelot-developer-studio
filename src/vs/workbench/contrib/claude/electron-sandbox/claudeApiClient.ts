@@ -5,7 +5,6 @@
 
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { Emitter } from '../../../../base/common/event.js';
-import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { IMainProcessService } from '../../../../platform/ipc/common/mainProcessService.js';
 import {
