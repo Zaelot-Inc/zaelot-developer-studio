@@ -113,3 +113,13 @@ jobs:
       electron_tests: true
       browser_tests: true
       remote_tests: true
+
+  macos-test:
+    name: macOS Test
+    needs: compile
+    uses: ./.github/workflows/pr-darwin-test.yml
+    with:
+      job_name: "macOS Test"
+      electron_tests: true
+      browser_tests: true
+      remote_tests: true
