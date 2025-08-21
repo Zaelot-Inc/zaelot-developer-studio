@@ -479,7 +479,14 @@ export interface IProductConfiguration {
 
 function getProductConfiguration(): IProductConfiguration {
 	const content = fs.readFileSync(path.join(vscode.env.appRoot, 'product.json')).toString();
-	return JSON.parse(content) as IProductConfiguration;
+	const config = JSON.parse(content) as IProductConfiguration;
+
+	// If using a custom commit like "zaelot-dev", replace with a stable VSCode commit for testing
+	if (config.commit === 'zaelot-dev') {
+		config.commit = '1a5daa3a0231a0fbba4f14db7ec463cf99d7768e'; // VSCode 1.95.3 stable
+	}
+
+	return config;
 }
 
 function getNewEnv(): { [x: string]: string | undefined } {
