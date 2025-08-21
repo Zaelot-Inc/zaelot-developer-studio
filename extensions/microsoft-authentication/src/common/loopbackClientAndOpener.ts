@@ -61,7 +61,9 @@ export class UriHandlerLoopbackClient implements ILoopbackClientAndOpener {
 
 	private async _getCodeResponseFromUriHandler(): Promise<void> {
 		if (!this._responseDeferred) {
-			throw new Error('No listener for auth code');
+			// If no listener is set, just return silently
+			// This can happen if openBrowser is called before listenForAuthCode
+			return;
 		}
 		const url = await toPromise(this._uriHandler.event);
 		this._logger.debug(`Received URL event. Authority: ${url.authority}`);
@@ -78,7 +80,9 @@ export class UriHandlerLoopbackClient implements ILoopbackClientAndOpener {
 
 	private async _getCodeResponseFromQuickPick(): Promise<void> {
 		if (!this._responseDeferred) {
-			throw new Error('No listener for auth code');
+			// If no listener is set, just return silently
+			// This can happen if openBrowser is called before listenForAuthCode
+			return;
 		}
 		const inputBox = window.createInputBox();
 		inputBox.ignoreFocusOut = true;

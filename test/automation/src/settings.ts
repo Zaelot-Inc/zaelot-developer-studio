@@ -58,13 +58,30 @@ export class SettingsEditor {
 	}
 
 	async openUserSettingsFile(): Promise<void> {
+		this.code.logger.log('Opening user settings file...');
 		await this.quickaccess.runCommand('workbench.action.openSettingsJson');
+
+		// Wait for the settings tab to appear
+		this.code.logger.log('Waiting for settings.json tab...');
+		await this.editors.waitForTab('settings.json');
+
+		// Wait for the editor to be focused
+		this.code.logger.log('Waiting for settings.json editor focus...');
 		await this.editor.waitForEditorFocus('settings.json', 1);
 	}
 
 	async openUserSettingsUI(): Promise<void> {
 		await this.quickaccess.runCommand('workbench.action.openSettings2');
-		await this.code.waitForActiveElement(this._editContextSelector());
+		// Try both possible selectors for settings UI
+		const primarySelector = this._editContextSelector();
+		const fallbackSelector = !this.code.editContextEnabled ? SEARCH_BOX_NATIVE_EDIT_CONTEXT : SEARCH_BOX_TEXTAREA;
+
+		try {
+			await this.code.waitForActiveElement(primarySelector, 200);
+		} catch (error) {
+			this.code.logger.log(`Primary settings selector '${primarySelector}' failed, trying fallback...`);
+			await this.code.waitForActiveElement(fallbackSelector, 200);
+		}
 	}
 
 	async searchSettingsUI(query: string): Promise<void> {
