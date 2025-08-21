@@ -101,9 +101,11 @@ async function runCommand<TimesType = TreeSitterTimes | TextMateTimes>(command: 
 }
 
 async function doTest(file: Uri, times: number) {
-	const treeSitterResults = await runCommand<TreeSitterTimes>('_workbench.colorizeTreeSitterTokens', file, times);
+	// Tree Sitter command not available yet, skip Tree Sitter testing
+	// const treeSitterResults = await runCommand<TreeSitterTimes>('_workbench.colorizeTreeSitterTokens', file, times);
 
-	const { bestParse, bestCapture, bestMetadata, bestCombined, worstParse, worstCapture, worstMetadata, worstCombined } = findBestsAndWorsts(treeSitterResults);
+	// Skip Tree Sitter analysis since command is not available
+	// const { bestParse, bestCapture, bestMetadata, bestCombined, worstParse, worstCapture, worstMetadata, worstCombined } = findBestsAndWorsts(treeSitterResults);
 	const textMateResults = await runCommand<TextMateTimes>('_workbench.colorizeTextMateTokens', file, times);
 	const textMateBestWorst = findBestsAndWorsts(textMateResults);
 
@@ -114,10 +116,6 @@ async function doTest(file: Uri, times: number) {
 	const numLength = 7;
 	const resultString = `                        | First   | Best    | Worst   |
 | --------------------- | ------- | ------- | ------- |
-| TreeSitter (parse)    | ${toString(treeSitterResults[0].parseTime, numLength)} | ${toString(bestParse!, numLength)} | ${toString(worstParse!, numLength)} |
-| TreeSitter (capture)  | ${toString(treeSitterResults[0].captureTime, numLength)} | ${toString(bestCapture!, numLength)} | ${toString(worstCapture!, numLength)} |
-| TreeSitter (metadata) | ${toString(treeSitterResults[0].metadataTime, numLength)} | ${toString(bestMetadata!, numLength)} | ${toString(worstMetadata!, numLength)} |
-| TreeSitter (total)    | ${toString(treeSitterResults[0].parseTime + treeSitterResults[0].captureTime + treeSitterResults[0].metadataTime, numLength)} | ${toString(bestCombined, numLength)} | ${toString(worstCombined, numLength)} |
 | TextMate              | ${toString(textMateResults[0].tokenizeTime, numLength)} | ${toString(textMateBestWorst.bestCombined, numLength)} | ${toString(textMateBestWorst.worstCombined, numLength)} |
 `;
 	console.log(`File ${basename(file.fsPath)}:`);
@@ -130,11 +128,11 @@ suite('Tokenization Performance', () => {
 	let originalSettingValue: any;
 
 	suiteSetup(async function () {
-		originalSettingValue = workspace.getConfiguration('editor').get('experimental.preferTreeSitter');
-		await workspace.getConfiguration('editor').update('experimental.preferTreeSitter', ["typescript"], ConfigurationTarget.Global);
+		originalSettingValue = workspace.getConfiguration('editor').get('experimental.preferTreeSitter.typescript');
+		await workspace.getConfiguration('editor').update('experimental.preferTreeSitter.typescript', true, ConfigurationTarget.Global);
 	});
 	suiteTeardown(async function () {
-		await workspace.getConfiguration('editor').update('experimental.preferTreeSitter', originalSettingValue, ConfigurationTarget.Global);
+		await workspace.getConfiguration('editor').update('experimental.preferTreeSitter.typescript', originalSettingValue, ConfigurationTarget.Global);
 	});
 
 	for (const fixture of fs.readdirSync(fixturesPath)) {

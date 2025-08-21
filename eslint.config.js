@@ -1088,6 +1088,19 @@ export default tseslint.config(
 					]
 				},
 				{
+					'target': 'src/vs/workbench/contrib/claude/electron-sandbox/**',
+					'restrictions': [
+						'vs/base/**',
+						'vs/base/parts/*/**',
+						'vs/platform/**',
+						'vs/editor/**',
+						'vs/editor/contrib/**',
+						'vs/workbench/**',
+						'vs/workbench/services/**',
+						'vs/workbench/contrib/**'
+					]
+				},
+				{
 					'target': 'src/vs/code/~',
 					'restrictions': [
 						'vs/base/~',

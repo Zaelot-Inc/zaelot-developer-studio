@@ -3,6 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { Event } from '../../../../base/common/event.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+
 export interface IClaudeConfiguration {
 	apiKey: string;
 	baseUrl?: string;
@@ -94,3 +98,51 @@ export const CLAUDE_MODELS = {
 } as const;
 
 export type ClaudeModelId = keyof typeof CLAUDE_MODELS;
+
+// Service interface and decorator
+export const IClaudeApiClient = createDecorator<IClaudeApiClient>('claudeApiClient');
+
+export interface IClaudeApiClient {
+	readonly _serviceBrand: undefined;
+
+	/**
+	 * Event fired when the API client configuration changes
+	 */
+	readonly onDidChangeConfiguration: Event<void>;
+
+	/**
+	 * Configure the API client with API key and other settings
+	 */
+	configure(config: IClaudeConfiguration): void;
+
+	/**
+	 * Check if the API client is properly configured
+	 */
+	isConfigured(): boolean;
+
+	/**
+	 * Test the connection to Claude API
+	 */
+	testConnection(token?: CancellationToken): Promise<boolean>;
+
+	/**
+	 * Send a message to Claude and get a streaming response
+	 */
+	sendMessage(
+		messages: IClaudeMessage[],
+		model: ClaudeModelId,
+		options?: {
+			maxTokens?: number;
+			temperature?: number;
+			tools?: any[];
+			toolChoice?: any;
+		},
+		onProgress?: (chunk: IClaudeStreamResponse) => void,
+		token?: CancellationToken
+	): Promise<IClaudeResponse>;
+
+	/**
+	 * Estimate token count for a given text
+	 */
+	estimateTokens(text: string): number;
+}

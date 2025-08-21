@@ -55,32 +55,57 @@ export class MigrationService extends Disposable implements IMigrationService {
 	}
 
 	async detectInstallations(): Promise<IDetectedInstallation[]> {
-		// allow-any-unicode-next-line
-		this.logService.info('🔍 Detecting existing VS Code / Cursor installations...');
+
+		this.logService.info('[Migration] Detecting existing VS Code / Cursor installations...');
 
 		// Check if installations actually exist before declaring them
+		const homeDir = this.getHomePath();
 		const candidates = [
 			{
 				id: 'vscode',
 				name: 'Visual Studio Code',
-				path: '/Users/brunocerecetto/Library/Application Support/Code',
-				userDataPath: '/Users/brunocerecetto/Library/Application Support/Code',
-				extensionsPath: '/Users/brunocerecetto/.vscode/extensions'
+				path: isMacintosh
+					? `${homeDir}/Library/Application Support/Code`
+					: isWindows
+						? `${homeDir}\\AppData\\Roaming\\Code`
+						: `${homeDir}/.config/Code`,
+				userDataPath: isMacintosh
+					? `${homeDir}/Library/Application Support/Code`
+					: isWindows
+						? `${homeDir}\\AppData\\Roaming\\Code`
+						: `${homeDir}/.config/Code`,
+				extensionsPath: isMacintosh
+					? `${homeDir}/.vscode/extensions`
+					: isWindows
+						? `${homeDir}\\.vscode\\extensions`
+						: `${homeDir}/.vscode/extensions`
 			},
 			{
 				id: 'cursor',
 				name: 'Cursor',
-				path: '/Users/brunocerecetto/Library/Application Support/Cursor',
-				userDataPath: '/Users/brunocerecetto/Library/Application Support/Cursor',
-				extensionsPath: '/Users/brunocerecetto/.cursor/extensions'
+				path: isMacintosh
+					? `${homeDir}/Library/Application Support/Cursor`
+					: isWindows
+						? `${homeDir}\\AppData\\Roaming\\Cursor`
+						: `${homeDir}/.config/Cursor`,
+				userDataPath: isMacintosh
+					? `${homeDir}/Library/Application Support/Cursor`
+					: isWindows
+						? `${homeDir}\\AppData\\Roaming\\Cursor`
+						: `${homeDir}/.config/Cursor`,
+				extensionsPath: isMacintosh
+					? `${homeDir}/.cursor/extensions`
+					: isWindows
+						? `${homeDir}\\.cursor\\extensions`
+						: `${homeDir}/.cursor/extensions`
 			}
 		];
 
 		const installations: IDetectedInstallation[] = [];
 
 		for (const candidate of candidates) {
-			// allow-any-unicode-next-line
-		this.logService.info(`🔍 Checking ${candidate.name}:`);
+
+			this.logService.info(`[SEARCH] Checking ${candidate.name}:`);
 			this.logService.info(`  - User data path: ${candidate.userDataPath}`);
 			this.logService.info(`  - Extensions path: ${candidate.extensionsPath}`);
 
@@ -103,7 +128,7 @@ export class MigrationService extends Disposable implements IMigrationService {
 			this.logService.info(`  - Extensions.json exists: ${extensionsJsonExists}`);
 
 			const exists = userDataExists && extensionsExists && settingsExists;
-			this.logService.info(`  - ✅ Installation valid: ${exists}`);
+			this.logService.info(`  - [OK] Installation valid: ${exists}`);
 
 			installations.push({
 				...candidate,
@@ -112,8 +137,8 @@ export class MigrationService extends Disposable implements IMigrationService {
 		}
 
 		const foundInstallations = installations.filter(i => i.exists);
-		// allow-any-unicode-next-line
-		this.logService.info(`🎯 Detected ${foundInstallations.length} valid installations out of ${installations.length} candidates.`);
+
+		this.logService.info(`[TARGET] Detected ${foundInstallations.length} valid installations out of ${installations.length} candidates.`);
 
 		return installations;
 	}
@@ -123,8 +148,8 @@ export class MigrationService extends Disposable implements IMigrationService {
 			throw new Error(`Installation ${installation.name} does not exist`);
 		}
 
-		// allow-any-unicode-next-line
-		this.logService.info(`🚀 Starting automatic migration from ${installation.name}`);
+
+		this.logService.info(`[START] Starting automatic migration from ${installation.name}`);
 		this.logService.info(`Source path: ${installation.path}`);
 		this.logService.info(`User data path: ${installation.userDataPath}`);
 
@@ -160,14 +185,14 @@ export class MigrationService extends Disposable implements IMigrationService {
 
 			this.notificationService.notify({
 				severity: Severity.Info,
-				// allow-any-unicode-next-line
-				message: localize('migration.success', '🎉 Successfully migrated from {0}! Restarting application...', installation.name)
+
+				message: localize('migration.success', '[SUCCESS] Successfully migrated from {0}! Restarting application...', installation.name)
 			});
 
 			// Auto-restart the application to apply all changes
 			setTimeout(() => {
-				// allow-any-unicode-next-line
-				this.logService.info('🔄 Auto-restarting application to apply migration changes...');
+
+				this.logService.info('[RELOAD] Auto-restarting application to apply migration changes...');
 				this.commandService.executeCommand('workbench.action.reloadWindow');
 			}, 2000); // Give user 2 seconds to read the success message
 		} catch (error) {
@@ -177,82 +202,82 @@ export class MigrationService extends Disposable implements IMigrationService {
 	}
 
 	private async copySettings(installation: IDetectedInstallation): Promise<void> {
-		this.logService.info('⚙️ Starting settings migration...');
+		this.logService.info('[SETTINGS] Starting settings migration...');
 
 		try {
 			const sourceSettingsPath = joinPath(URI.file(installation.userDataPath), 'User', 'settings.json');
 			const currentUserDataPath = this.calculateUserDataPath();
 
-			this.logService.info(`📂 Source settings path: ${sourceSettingsPath.fsPath}`);
-			this.logService.info(`📂 Target user data path: ${currentUserDataPath}`);
+			this.logService.info(`[FOLDER] Source settings path: ${sourceSettingsPath.fsPath}`);
+			this.logService.info(`[FOLDER] Target user data path: ${currentUserDataPath}`);
 
 			// Ensure User directory exists first
 			const userDir = joinPath(URI.file(currentUserDataPath), 'User');
-			this.logService.info(`📁 Creating User directory: ${userDir.fsPath}`);
+			this.logService.info(`[DIR] Creating User directory: ${userDir.fsPath}`);
 
 			try {
 				await this.fileService.createFolder(userDir);
-				this.logService.info('✅ User directory created/exists');
+				this.logService.info('[OK] User directory created/exists');
 			} catch (e) {
-				this.logService.info('ℹ️ User directory already exists');
+				this.logService.info('[INFO] User directory already exists');
 			}
 
 			const targetSettingsPath = joinPath(URI.file(currentUserDataPath), 'User', 'settings.json');
-			this.logService.info(`📄 Target settings path: ${targetSettingsPath.fsPath}`);
+			this.logService.info(`[FILE] Target settings path: ${targetSettingsPath.fsPath}`);
 
 			// Check if source settings exist
 			const sourceExists = await this.fileService.exists(sourceSettingsPath);
-			this.logService.info(`🔍 Source settings exist: ${sourceExists}`);
+			this.logService.info(`[SEARCH] Source settings exist: ${sourceExists}`);
 
 			if (!sourceExists) {
-				this.logService.warn(`❌ Settings file not found at: ${sourceSettingsPath.fsPath}`);
+				this.logService.warn(`[ERROR] Settings file not found at: ${sourceSettingsPath.fsPath}`);
 				return;
 			}
 
 			// Read source settings
-			this.logService.info('📖 Reading source settings...');
+			this.logService.info('[READ] Reading source settings...');
 			const settingsContent = await this.fileService.readFile(sourceSettingsPath);
-			this.logService.info(`📝 Settings file size: ${settingsContent.value.byteLength} bytes`);
+			this.logService.info(`[SIZE] Settings file size: ${settingsContent.value.byteLength} bytes`);
 
 			// Parse and analyze settings
 			let settingsObj: any = {};
 			try {
 				settingsObj = JSON.parse(settingsContent.value.toString());
 				const settingsKeys = Object.keys(settingsObj);
-				this.logService.info(`📊 Found ${settingsKeys.length} settings`);
-				this.logService.info(`🔧 First 10 settings: ${settingsKeys.slice(0, 10).join(', ')}${settingsKeys.length > 10 ? '...' : ''}`);
+				this.logService.info(`[STATS] Found ${settingsKeys.length} settings`);
+				this.logService.info(`[CONFIG] First 10 settings: ${settingsKeys.slice(0, 10).join(', ')}${settingsKeys.length > 10 ? '...' : ''}`);
 
 				// Log important theme/appearance settings
 				const importantSettings = ['workbench.colorTheme', 'workbench.iconTheme', 'editor.fontFamily', 'editor.fontSize', 'editor.theme'];
 				const foundImportant = importantSettings.filter(key => settingsObj[key] !== undefined);
 				if (foundImportant.length > 0) {
-					this.logService.info(`🎨 Theme/appearance settings found: ${foundImportant.length}`);
+					this.logService.info(`[THEME] Theme/appearance settings found: ${foundImportant.length}`);
 					foundImportant.forEach(key => {
 						this.logService.info(`  - ${key}: ${JSON.stringify(settingsObj[key])}`);
 					});
 				} else {
-					this.logService.warn('⚠️ No theme/appearance settings found');
+					this.logService.warn('[WARN] No theme/appearance settings found');
 				}
 
 			} catch (parseError) {
-				this.logService.warn('⚠️ Could not parse settings for analysis:', parseError);
+				this.logService.warn('[WARN] Could not parse settings for analysis:', parseError);
 			}
 
 			// Write to target
-			this.logService.info('💾 Writing settings to target location...');
+			this.logService.info('[SAVE] Writing settings to target location...');
 			await this.fileService.writeFile(targetSettingsPath, settingsContent.value);
 
 			// Verify target file was written
 			const targetExists = await this.fileService.exists(targetSettingsPath);
-			this.logService.info(`✅ Settings copied successfully. Target exists: ${targetExists}`);
+			this.logService.info(`[OK] Settings copied successfully. Target exists: ${targetExists}`);
 
 			if (targetExists) {
 				const targetContent = await this.fileService.readFile(targetSettingsPath);
-				this.logService.info(`📏 Target file size: ${targetContent.value.byteLength} bytes`);
+				this.logService.info(`[BYTES] Target file size: ${targetContent.value.byteLength} bytes`);
 			}
 
 		} catch (error) {
-			this.logService.error('❌ Failed to copy settings:', error);
+			this.logService.error('[ERROR] Failed to copy settings:', error);
 		}
 	}
 
@@ -265,12 +290,12 @@ export class MigrationService extends Disposable implements IMigrationService {
 			if (await this.fileService.exists(sourceKeybindingsPath)) {
 				const keybindingsContent = await this.fileService.readFile(sourceKeybindingsPath);
 				await this.fileService.writeFile(targetKeybindingsPath, keybindingsContent.value);
-				// allow-any-unicode-next-line
-				this.logService.info('✅ Keybindings copied successfully');
+
+				this.logService.info('[OK] Keybindings copied successfully');
 			}
 		} catch (error) {
-			// allow-any-unicode-next-line
-			this.logService.warn('⚠️ Failed to copy keybindings:', error);
+
+			this.logService.warn('[WARN] Failed to copy keybindings:', error);
 		}
 	}
 
@@ -283,72 +308,72 @@ export class MigrationService extends Disposable implements IMigrationService {
 			if (await this.fileService.exists(sourceSnippetsPath)) {
 				// Copy entire snippets directory
 				await this.fileService.copy(sourceSnippetsPath, targetSnippetsPath, true);
-				// allow-any-unicode-next-line
-				this.logService.info('✅ Snippets copied successfully');
+
+				this.logService.info('[OK] Snippets copied successfully');
 			}
 		} catch (error) {
-			// allow-any-unicode-next-line
-			this.logService.warn('⚠️ Failed to copy snippets:', error);
+
+			this.logService.warn('[WARN] Failed to copy snippets:', error);
 		}
 	}
 
 	private async installExtensions(installation: IDetectedInstallation): Promise<void> {
-		this.logService.info('🔧 Starting extension installation process...');
+		this.logService.info('[CONFIG] Starting extension installation process...');
 
 		try {
 			// Check if extension gallery service is available
 			if (!this.extensionGalleryService) {
-				this.logService.error('❌ Extension Gallery Service is not available!');
+				this.logService.error('[ERROR] Extension Gallery Service is not available!');
 				return;
 			}
 
-			this.logService.info('✅ Extension Gallery Service is available');
+			this.logService.info('[OK] Extension Gallery Service is available');
 
 			// Check if gallery service is enabled
 			const isEnabled = this.extensionGalleryService.isEnabled();
-			this.logService.info(`🔍 Gallery service enabled: ${isEnabled}`);
+			this.logService.info(`[SEARCH] Gallery service enabled: ${isEnabled}`);
 
 			if (!isEnabled) {
-				this.logService.error('❌ Extension Gallery Service is not enabled in product configuration');
+				this.logService.error('[ERROR] Extension Gallery Service is not enabled in product configuration');
 				return;
 			}
 
 			// Look for extensions.json in the extensions directory
 			const extensionsJsonPath = joinPath(URI.file(installation.extensionsPath), 'extensions.json');
-			this.logService.info(`🔍 Looking for extensions at: ${extensionsJsonPath.fsPath}`);
+			this.logService.info(`[SEARCH] Looking for extensions at: ${extensionsJsonPath.fsPath}`);
 
 			const extensionsJsonExists = await this.fileService.exists(extensionsJsonPath);
-			this.logService.info(`📁 Extensions.json exists: ${extensionsJsonExists}`);
+			this.logService.info(`[DIR] Extensions.json exists: ${extensionsJsonExists}`);
 
 			if (!extensionsJsonExists) {
-				this.logService.warn(`❌ Extensions file not found at: ${extensionsJsonPath.fsPath}`);
+				this.logService.warn(`[ERROR] Extensions file not found at: ${extensionsJsonPath.fsPath}`);
 				return;
 			}
 
-			this.logService.info('📖 Reading extensions.json file...');
+			this.logService.info('[READ] Reading extensions.json file...');
 			const extensionsContent = await this.fileService.readFile(extensionsJsonPath);
-			this.logService.info(`📝 Extensions file size: ${extensionsContent.value.byteLength} bytes`);
+			this.logService.info(`[SIZE] Extensions file size: ${extensionsContent.value.byteLength} bytes`);
 
 			// Parse the complex extensions JSON structure
 			let extensionsData;
 			try {
 				extensionsData = JSON.parse(extensionsContent.value.toString());
-				this.logService.info(`✅ Successfully parsed extensions.json`);
-				this.logService.info(`📊 Found ${extensionsData.length || 0} installed extensions`);
+				this.logService.info(`[OK] Successfully parsed extensions.json`);
+				this.logService.info(`[STATS] Found ${extensionsData.length || 0} installed extensions`);
 			} catch (parseError) {
-				this.logService.error('❌ Failed to parse extensions.json:', parseError);
+				this.logService.error('[ERROR] Failed to parse extensions.json:', parseError);
 				return;
 			}
 
 			if (!Array.isArray(extensionsData) || extensionsData.length === 0) {
-				this.logService.warn('⚠️ No extensions found in extensions.json');
+				this.logService.warn('[WARN] No extensions found in extensions.json');
 				return;
 			}
 
 			// Get currently installed extensions for comparison
-			this.logService.info('🔍 Getting currently installed extensions...');
+			this.logService.info('[SEARCH] Getting currently installed extensions...');
 			const installedExtensions = await this.extensionManagementService.getInstalled();
-			this.logService.info(`📋 Currently installed: ${installedExtensions.length} extensions`);
+			this.logService.info(`[LIST] Currently installed: ${installedExtensions.length} extensions`);
 
 			let successCount = 0;
 			let skippedCount = 0;
@@ -356,18 +381,18 @@ export class MigrationService extends Disposable implements IMigrationService {
 
 			for (let i = 0; i < extensionsData.length; i++) {
 				const extension = extensionsData[i];
-				this.logService.info(`\n🔧 Processing extension ${i + 1}/${extensionsData.length}:`);
+				this.logService.info(`\n[CONFIG] Processing extension ${i + 1}/${extensionsData.length}:`);
 
 				try {
 					const extensionId = extension.identifier?.id;
 					if (!extensionId) {
-						this.logService.warn('⚠️ Extension has no identifier, skipping');
+						this.logService.warn('[WARN] Extension has no identifier, skipping');
 						skippedCount++;
 						continue;
 					}
 
-					this.logService.info(`  📦 Extension ID: ${extensionId}`);
-					this.logService.info(`  🏷️  Version: ${extension.version || 'unknown'}`);
+					this.logService.info(`  [PKG] Extension ID: ${extensionId}`);
+					this.logService.info(`  [VER]  Version: ${extension.version || 'unknown'}`);
 
 					// Check if already installed
 					const alreadyInstalled = installedExtensions.find(ext =>
@@ -375,58 +400,58 @@ export class MigrationService extends Disposable implements IMigrationService {
 					);
 
 					if (alreadyInstalled) {
-						this.logService.info(`  ⚪ Already installed: ${extensionId} (v${alreadyInstalled.manifest.version})`);
+						this.logService.info(`  [SKIP] Already installed: ${extensionId} (v${alreadyInstalled.manifest.version})`);
 						skippedCount++;
 						continue;
 					}
 
 					// Search for extension in gallery
-					this.logService.info(`  🔍 Searching marketplace for: ${extensionId}`);
+					this.logService.info(`  [SEARCH] Searching marketplace for: ${extensionId}`);
 
 					const queryResult = await this.extensionGalleryService.query({
 						text: extensionId,
 						pageSize: 1
 					}, CancellationToken.None);
 
-					this.logService.info(`  📊 Marketplace search results: ${queryResult.firstPage.length} found`);
+					this.logService.info(`  [STATS] Marketplace search results: ${queryResult.firstPage.length} found`);
 
 					if (queryResult.firstPage.length === 0) {
-						this.logService.warn(`  ❌ Extension not found in marketplace: ${extensionId}`);
+						this.logService.warn(`  [ERROR] Extension not found in marketplace: ${extensionId}`);
 						errorCount++;
 						continue;
 					}
 
 					const galleryExtension = queryResult.firstPage[0];
-					this.logService.info(`  ✅ Found in marketplace: ${galleryExtension.displayName || extensionId}`);
-					this.logService.info(`  📈 Downloads: ${(galleryExtension as any).statistics?.find((s: any) => s.statisticName === 'install')?.value || 'unknown'}`);
+					this.logService.info(`  [OK] Found in marketplace: ${galleryExtension.displayName || extensionId}`);
+					this.logService.info(`  [DL] Downloads: ${(galleryExtension as any).statistics?.find((s: any) => s.statisticName === 'install')?.value || 'unknown'}`);
 
 					// Install the extension
-					this.logService.info(`  ⬇️ Installing ${extensionId}...`);
+					this.logService.info(`  [INSTALL] Installing ${extensionId}...`);
 
 					try {
 						await this.extensionManagementService.installFromGallery(galleryExtension);
-						this.logService.info(`  ✅ Successfully installed: ${extensionId}`);
+						this.logService.info(`  [OK] Successfully installed: ${extensionId}`);
 						successCount++;
 					} catch (installError) {
-						this.logService.error(`  ❌ Installation failed for ${extensionId}:`, installError);
+						this.logService.error(`  [ERROR] Installation failed for ${extensionId}:`, installError);
 						errorCount++;
 					}
 
 				} catch (extensionError) {
-					this.logService.error(`  ❌ Error processing ${extension.identifier?.id || 'unknown'}:`, extensionError);
+					this.logService.error(`  [ERROR] Error processing ${extension.identifier?.id || 'unknown'}:`, extensionError);
 					errorCount++;
 				}
 			}
 
 			// Summary
-			this.logService.info(`\n📊 Extension migration summary:`);
-			this.logService.info(`  ✅ Successfully installed: ${successCount}`);
-			this.logService.info(`  ⚪ Already installed (skipped): ${skippedCount}`);
-			this.logService.info(`  ❌ Failed: ${errorCount}`);
-			this.logService.info(`  📦 Total processed: ${extensionsData.length}`);
+			this.logService.info(`\n[STATS] Extension migration summary:`);
+			this.logService.info(`  [OK] Successfully installed: ${successCount}`);
+			this.logService.info(`  [SKIP] Already installed (skipped): ${skippedCount}`);
+			this.logService.info(`  [ERROR] Failed: ${errorCount}`);
+			this.logService.info(`  [PKG] Total processed: ${extensionsData.length}`);
 
 		} catch (error) {
-			this.logService.error('❌ Critical error in extension installation:', error);
+			this.logService.error('[ERROR] Critical error in extension installation:', error);
 		}
 	}
 
@@ -447,17 +472,17 @@ export class MigrationService extends Disposable implements IMigrationService {
 
 					if (await this.fileService.exists(sourcePath)) {
 						await this.fileService.copy(sourcePath, targetPath, true);
-						// allow-any-unicode-next-line
-						this.logService.info(`✅ Copied ${fileName} successfully`);
+
+						this.logService.info(`[OK] Copied ${fileName} successfully`);
 					}
 				} catch (error) {
-					// allow-any-unicode-next-line
-					this.logService.warn(`⚠️ Failed to copy ${fileName}:`, error);
+
+					this.logService.warn(`[WARN] Failed to copy ${fileName}:`, error);
 				}
 			}
 		} catch (error) {
-			// allow-any-unicode-next-line
-			this.logService.warn('⚠️ Failed to copy other files:', error);
+
+			this.logService.warn('[WARN] Failed to copy other files:', error);
 		}
 	}
 
@@ -472,8 +497,8 @@ export class MigrationService extends Disposable implements IMigrationService {
 		// Note: In browser context, we need to access environment through a different mechanism
 		try {
 			// Try to get from global process first
-			const envHome = globalThis.process?.env?.HOME;
-			const envUser = globalThis.process?.env?.USER || globalThis.process?.env?.USERNAME;
+			const envHome = (globalThis as any).process?.env?.HOME;
+			const envUser = (globalThis as any).process?.env?.USER || (globalThis as any).process?.env?.USERNAME;
 
 			this.logService.info(`Environment check - HOME: ${envHome}, USER: ${envUser}`);
 
@@ -485,9 +510,8 @@ export class MigrationService extends Disposable implements IMigrationService {
 				// For Windows, try common paths
 				return 'C:\\Users\\' + (envUser || 'user');
 			} else if (isMacintosh) {
-				// For macOS, use the actual detected user or a hardcoded path for testing
-				// Since we know the path from the terminal, let's use it directly for now
-				return '/Users/' + (envUser || 'brunocerecetto');
+				// For macOS, use the actual detected user or a generic fallback
+				return '/Users/' + (envUser || 'user');
 			} else {
 				// For Linux, use common home path
 				return '/home/' + (envUser || 'user');
@@ -498,8 +522,8 @@ export class MigrationService extends Disposable implements IMigrationService {
 			if (isWindows) {
 				return 'C:\\Users\\user';
 			} else if (isMacintosh) {
-				// Use the known path for this user
-				return '/Users/brunocerecetto';
+				// Use generic fallback for macOS
+				return '/Users/user';
 			} else {
 				return '/home/user';
 			}
@@ -512,18 +536,18 @@ export class MigrationService extends Disposable implements IMigrationService {
 
 		// In development, VSCode uses 'code-oss-dev' as the folder name
 		// In production, it would use the actual product name
-		const isDev = globalThis.process?.env?.VSCODE_DEV;
+		const isDev = (globalThis as any).process?.env?.VSCODE_DEV;
 		const folderName = isDev ? 'code-oss-dev' : 'Zaelot Developer Studio';
 
 		try {
 			if (isWindows) {
-				const appData = globalThis.process?.env?.APPDATA || `${homePath}\\AppData\\Roaming`;
+				const appData = (globalThis as any).process?.env?.APPDATA || `${homePath}\\AppData\\Roaming`;
 				return `${appData}\\${folderName}`;
 			} else if (isMacintosh) {
 				return `${homePath}/Library/Application Support/${folderName}`;
 			} else {
 				// Linux
-				const configHome = globalThis.process?.env?.XDG_CONFIG_HOME || `${homePath}/.config`;
+				const configHome = (globalThis as any).process?.env?.XDG_CONFIG_HOME || `${homePath}/.config`;
 				return `${configHome}/${folderName}`;
 			}
 		} catch (error) {

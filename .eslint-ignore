@@ -38,4 +38,5 @@
 **/test/automation/out/**
 **/typings/**
 **/.build/**
+**/resources/branding/**
 !.vscode

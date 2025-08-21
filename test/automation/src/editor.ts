@@ -80,10 +80,10 @@ export class Editor {
 	async waitForEditorFocus(filename: string, lineNumber: number, selectorPrefix = ''): Promise<void> {
 		const editor = [selectorPrefix || '', EDITOR(filename)].join(' ');
 		const line = `${editor} .view-lines > .view-line:nth-child(${lineNumber})`;
-		const editContext = `${editor} ${this._editContextSelector()}`;
 
 		await this.code.waitAndClick(line, 1, 1);
-		await this.code.waitForActiveElement(editContext);
+		// Use fallback strategy to find the correct edit context
+		await this._waitForEditContextWithFallback(editor, filename);
 	}
 
 	async waitForTypeInEditor(filename: string, text: string, selectorPrefix = ''): Promise<any> {
@@ -94,8 +94,8 @@ export class Editor {
 
 		await this.code.waitForElement(editor);
 
-		const editContext = `${editor} ${this._editContextSelector()}`;
-		await this.code.waitForActiveElement(editContext);
+		// Use fallback strategy to find the correct edit context
+		const editContext = await this._waitForEditContextWithFallback(editor, filename);
 
 		await this.code.waitForTypeInEditor(editContext, text);
 
@@ -109,6 +109,50 @@ export class Editor {
 
 	private _editContextSelector() {
 		return !this.code.editContextEnabled ? 'textarea' : '.native-edit-context';
+	}
+
+	private async _waitForEditContextWithFallback(editor: string, filename: string): Promise<string> {
+		const primarySelector = `${editor} ${this._editContextSelector()}`;
+		const fallbackSelector = `${editor} ${!this.code.editContextEnabled ? '.native-edit-context' : 'textarea'}`;
+
+		// First wait for the editor itself to exist
+		this.code.logger.log(`Waiting for editor to exist: ${editor}`);
+		await this.code.waitForElement(editor, undefined, 200);
+
+		// Wait for any edit context to exist first
+		const anyEditContext = `${editor} textarea, ${editor} .native-edit-context`;
+		this.code.logger.log(`Waiting for any edit context: ${anyEditContext}`);
+		await this.code.waitForElement(anyEditContext, undefined, 200);
+
+		try {
+			this.code.logger.log(`Trying primary selector: ${primarySelector}`);
+			await this.code.waitForActiveElement(primarySelector, 100); // 10 seconds
+			return primarySelector;
+		} catch (error) {
+			this.code.logger.log(`Primary selector '${primarySelector}' failed for ${filename}, trying fallback...`);
+			try {
+				this.code.logger.log(`Trying fallback selector: ${fallbackSelector}`);
+				await this.code.waitForActiveElement(fallbackSelector, 100); // 10 seconds
+				return fallbackSelector;
+			} catch (fallbackError) {
+				// Try to click on any edit context that exists to force focus
+				try {
+					this.code.logger.log(`Both selectors failed, trying to click on any edit context to force focus...`);
+					await this.code.waitAndClick(anyEditContext);
+					await this.code.wait(500); // Wait for focus
+					await this.code.waitForActiveElement(primarySelector, 50); // 5 seconds
+					return primarySelector;
+				} catch (clickError) {
+					try {
+						await this.code.waitForActiveElement(fallbackSelector, 50); // 5 seconds
+						return fallbackSelector;
+					} catch (finalError) {
+						this.code.logger.log(`All attempts failed for ${filename}. Primary: ${primarySelector}, Fallback: ${fallbackSelector}`);
+						throw new Error(`Could not find active editor for ${filename}. Tried: ${primarySelector} and ${fallbackSelector}`);
+					}
+				}
+			}
+		}
 	}
 
 	async waitForEditorContents(filename: string, accept: (contents: string) => boolean, selectorPrefix = ''): Promise<any> {

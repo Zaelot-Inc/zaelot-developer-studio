@@ -10,11 +10,12 @@ import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js'
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
 
 import { IConfigurationRegistry, Extensions as ConfigurationExtensions } from '../../../../platform/configuration/common/configurationRegistry.js';
-import { IClaudeApiClient, ClaudeApiClient } from '../common/claudeApiClient.js';
+import { IClaudeApiClient } from '../common/claudeTypes.js';
 import { IClaudeConfigurationService, ClaudeConfigurationService } from './claudeConfigurationService.js';
 import { ClaudeLanguageModelProvider } from '../common/claudeLanguageModelProvider.js';
 
 import { ILogService } from '../../../../platform/log/common/log.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import {
 	ILanguageModelsService
 } from '../../chat/common/languageModels.js';
@@ -23,12 +24,13 @@ import './claudeCommands.js';
 class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContribution {
 
 	private claudeProvider: ClaudeLanguageModelProvider | undefined;
+	private claudeApiClient: IClaudeApiClient | undefined;
 
 	constructor(
-		@IClaudeApiClient private readonly claudeApiClient: IClaudeApiClient,
 		@IClaudeConfigurationService private readonly claudeConfigurationService: IClaudeConfigurationService,
 		@ILogService private readonly logService: ILogService,
-		@ILanguageModelsService private readonly languageModelsService: ILanguageModelsService
+		@ILanguageModelsService private readonly languageModelsService: ILanguageModelsService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService
 	) {
 		super();
 
@@ -38,6 +40,20 @@ class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContri
 
 	private async _initialize(): Promise<void> {
 		try {
+			// Try to get Claude API client if available
+			try {
+				this.claudeApiClient = this.instantiationService.invokeFunction(accessor => {
+					try {
+						return accessor.get(IClaudeApiClient);
+					} catch {
+						return undefined;
+					}
+				});
+			} catch (error) {
+				this.logService.debug('Claude API client not available in this context');
+				this.claudeApiClient = undefined;
+			}
+
 			// Initialize Claude API client with current configuration
 			this._updateClaudeConfiguration();
 
@@ -58,6 +74,10 @@ class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContri
 
 	private _updateClaudeConfiguration(): void {
 		try {
+			if (!this.claudeApiClient) {
+				this.logService.debug('Claude API client not available in this context');
+				return;
+			}
 			const config = this.claudeConfigurationService.getConfiguration();
 			this.claudeApiClient.configure(config);
 		} catch (error) {
@@ -67,6 +87,11 @@ class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContri
 
 	private _registerClaudeProvider(): void {
 		try {
+			if (!this.claudeApiClient) {
+				this.logService.debug('Claude API client not available, skipping provider registration');
+				return;
+			}
+
 			if (this.claudeProvider) {
 				this.claudeProvider.dispose();
 			}
@@ -109,7 +134,8 @@ class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContri
 }
 
 // Register services
-registerSingleton(IClaudeApiClient, ClaudeApiClient, InstantiationType.Delayed);
+// Note: ClaudeApiClient registration moved to electron-sandbox specific file
+// registerSingleton(IClaudeApiClient, ClaudeApiClient, InstantiationType.Delayed);
 registerSingleton(IClaudeConfigurationService, ClaudeConfigurationService, InstantiationType.Delayed);
 
 // Register configuration schema

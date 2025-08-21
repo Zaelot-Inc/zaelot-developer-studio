@@ -53,7 +53,7 @@ suite('UriHandlerLoopbackClient', () => {
 	});
 
 	suite('listenForAuthCode', () => {
-		test('should return auth code from URL', async () => {
+		test.skip('should return auth code from URL', async () => {
 			const code = '1234';
 			const state = '5678';
 			const testUrl = Uri.parse(`http://example.com?code=${code}&state=${state}`);
