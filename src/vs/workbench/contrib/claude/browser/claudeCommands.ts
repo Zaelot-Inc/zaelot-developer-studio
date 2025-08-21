@@ -9,7 +9,7 @@ import { IQuickInputService } from '../../../../platform/quickinput/common/quick
 import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { IClaudeConfigurationService } from './claudeConfigurationService.js';
-import { IClaudeApiClient } from '../common/claudeApiClient.js';
+import { IClaudeApiClient } from '../common/claudeTypes.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
 
 class ConfigureClaudeApiKeyAction extends Action2 {

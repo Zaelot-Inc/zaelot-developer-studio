@@ -10,7 +10,7 @@ import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js'
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
 
 import { IConfigurationRegistry, Extensions as ConfigurationExtensions } from '../../../../platform/configuration/common/configurationRegistry.js';
-import { IClaudeApiClient, ClaudeApiClient } from '../common/claudeApiClient.js';
+import { IClaudeApiClient } from '../common/claudeTypes.js';
 import { IClaudeConfigurationService, ClaudeConfigurationService } from './claudeConfigurationService.js';
 import { ClaudeLanguageModelProvider } from '../common/claudeLanguageModelProvider.js';
 
@@ -109,7 +109,8 @@ class ClaudeWorkbenchContribution extends Disposable implements IWorkbenchContri
 }
 
 // Register services
-registerSingleton(IClaudeApiClient, ClaudeApiClient, InstantiationType.Delayed);
+// Note: ClaudeApiClient registration moved to electron-sandbox specific file
+// registerSingleton(IClaudeApiClient, ClaudeApiClient, InstantiationType.Delayed);
 registerSingleton(IClaudeConfigurationService, ClaudeConfigurationService, InstantiationType.Delayed);
 
 // Register configuration schema
