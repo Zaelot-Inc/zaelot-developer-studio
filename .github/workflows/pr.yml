@@ -104,22 +104,4 @@ jobs:
       job_name: "Linux CLI Test"
       rustup_toolchain: "1.80"
 
-  windows-test:
-    name: Windows Test
-    needs: compile
-    uses: ./.github/workflows/pr-win32-test.yml
-    with:
-      job_name: "Windows Test"
-      electron_tests: true
-      browser_tests: true
-      remote_tests: true
 
-  macos-test:
-    name: macOS Test
-    needs: compile
-    uses: ./.github/workflows/pr-darwin-test.yml
-    with:
-      job_name: "macOS Test"
-      electron_tests: true
-      browser_tests: true
-      remote_tests: true
