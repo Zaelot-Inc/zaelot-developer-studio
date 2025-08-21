@@ -18,7 +18,7 @@ env:
 jobs:
   compile:
     name: Compile & Hygiene
-    runs-on: [self-hosted, 1ES.Pool=1es-vscode-oss-ubuntu-22.04-x64]
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout microsoft/vscode
         uses: actions/checkout@v4
@@ -86,4 +86,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # TODO: Re-enable platform-specific tests once CI infrastructure is configured
+  linux-test:
+    name: Linux Test
+    needs: compile
+    uses: ./.github/workflows/pr-linux-test.yml
+    with:
+      job_name: "Linux Test"
+      electron_tests: true
+      browser_tests: true
+      remote_tests: true
+
+  linux-cli-test:
+    name: Linux CLI Test
+    needs: compile
+    uses: ./.github/workflows/pr-linux-cli-test.yml
+    with:
+      job_name: "Linux CLI Test"
+      rustup_toolchain: "1.80"
+
+  windows-test:
+    name: Windows Test
+    needs: compile
+    uses: ./.github/workflows/pr-win32-test.yml
+    with:
+      job_name: "Windows Test"
+      electron_tests: true
+      browser_tests: true
+      remote_tests: true
