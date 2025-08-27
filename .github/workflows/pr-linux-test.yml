@@ -207,7 +207,8 @@ jobs:
         run: |
           set -e
           # Check if the main application was compiled successfully
-          if [ ! -f ".build/electron/code" ] && [ ! -f ".build/electron/code.exe" ]; then
+          # The executable name is 'zaelot-dev-studio' for this custom application
+          if [ ! -f ".build/electron/zaelot-dev-studio" ] && [ ! -f ".build/electron/zaelot-dev-studio.exe" ]; then
             echo "Error: Main application was not compiled successfully"
             echo "Contents of .build/electron/:"
             ls -la .build/electron/ || echo "Directory .build/electron/ does not exist"
@@ -221,10 +222,22 @@ jobs:
         env:
           DISPLAY: ":10"
           # Prevent VS Code download by using local build
-          VSCODE_REMOTE_SERVER_PATH: "${{ github.workspace }}/.build/electron"
+          # Point to the project root so scripts and compiled app are accessible
+          VSCODE_REMOTE_SERVER_PATH: "${{ github.workspace }}"
           # Force dev mode to avoid commit-based downloads
           TESTRESOLVER_COMMIT: ""
-        run: ./scripts/test-integration.sh --tfs "Integration Tests"
+        run: |
+          echo "=== Test Configuration Debug ==="
+          echo "Current directory: $(pwd)"
+          echo "VSCODE_REMOTE_SERVER_PATH: $VSCODE_REMOTE_SERVER_PATH"
+          echo "TESTRESOLVER_COMMIT: $TESTRESOLVER_COMMIT"
+          echo "Contents of .build/electron/:"
+          ls -la .build/electron/ || echo "Directory .build/electron/ does not exist"
+          echo "Contents of scripts/:"
+          ls -la scripts/ | grep -E "(code|server)" || echo "No code/server scripts found"
+          echo "================================"
+          echo "Starting integration tests..."
+          ./scripts/test-integration.sh --tfs "Integration Tests"
 
       - name: 🧪 Run integration tests (Browser, Chromium)
         if: ${{ inputs.browser_tests }}
