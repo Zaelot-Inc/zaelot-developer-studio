@@ -196,12 +196,35 @@ jobs:
             compile-extension:vscode-colorize-perf-tests \
             compile-extension:vscode-test-resolver
 
+      - name: Compile main application
+        run: |
+          set -e
+          # Compile the main application to avoid downloading VS Code
+          npm run gulp compile
+          echo "Main application compiled successfully"
+
+      - name: Verify application compilation
+        run: |
+          set -e
+          # Check if the main application was compiled successfully
+          if [ ! -f ".build/electron/code" ] && [ ! -f ".build/electron/code.exe" ]; then
+            echo "Error: Main application was not compiled successfully"
+            echo "Contents of .build/electron/:"
+            ls -la .build/electron/ || echo "Directory .build/electron/ does not exist"
+            exit 1
+          fi
+          echo "Main application compilation verified successfully"
+
       - name: 🧪 Run integration tests (Electron)
         if: ${{ inputs.electron_tests }}
         timeout-minutes: 20
-        run: ./scripts/test-integration.sh --tfs "Integration Tests"
         env:
           DISPLAY: ":10"
+          # Prevent VS Code download by using local build
+          VSCODE_REMOTE_SERVER_PATH: "${{ github.workspace }}/.build/electron"
+          # Force dev mode to avoid commit-based downloads
+          TESTRESOLVER_COMMIT: ""
+        run: ./scripts/test-integration.sh --tfs "Integration Tests"
 
       - name: 🧪 Run integration tests (Browser, Chromium)
         if: ${{ inputs.browser_tests }}

@@ -174,16 +174,37 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 				const serverCommand = `${serverApplicationName}${process.platform === 'win32' ? '.cmd' : ''}`;
 				let serverLocation = env['VSCODE_REMOTE_SERVER_PATH']; // support environment variable to specify location of server on disk
-				if (!serverLocation) {
+
+				// If VSCODE_REMOTE_SERVER_PATH is set, use local mode instead of downloading
+				if (serverLocation) {
+					outputChannel.appendLine(`Using local VS Code server at: ${serverLocation}`);
+					const serverCommandPath = path.join(serverLocation, 'scripts', process.platform === 'win32' ? 'code-server.bat' : 'code-server.sh');
+
+					if (fs.existsSync(serverCommandPath)) {
+						outputChannel.appendLine(`Launching local server: "${serverCommandPath}" ${commandArgs.join(' ')}`);
+						const shell = (process.platform === 'win32');
+						extHostProcess = cp.spawn(serverCommandPath, commandArgs, { env, cwd: serverLocation, shell });
+					} else {
+						// Fallback to using the server binary directly
+						const serverBinPath = path.join(serverLocation, 'bin', serverCommand);
+						if (fs.existsSync(serverBinPath)) {
+							outputChannel.appendLine(`Using server binary at: ${serverBinPath}`);
+							const shell = (process.platform === 'win32');
+							extHostProcess = cp.spawn(serverBinPath, commandArgs, { env, cwd: serverLocation, shell });
+						} else {
+							throw new Error(`VS Code server not found at ${serverLocation}. Please ensure the application is compiled.`);
+						}
+					}
+				} else {
 					const serverBin = path.join(remoteDataDir, 'bin');
 					progress.report({ message: 'Installing VSCode Server' });
 					serverLocation = await downloadAndUnzipVSCodeServer(updateUrl, commit, quality, serverBin, m => outputChannel.appendLine(m));
-				}
 
-				outputChannel.appendLine(`Using server build at ${serverLocation}`);
-				outputChannel.appendLine(`Server arguments ${commandArgs.join(' ')}`);
-				const shell = (process.platform === 'win32');
-				extHostProcess = cp.spawn(path.join(serverLocation, 'bin', serverCommand), commandArgs, { env, cwd: serverLocation, shell });
+					outputChannel.appendLine(`Using server build at ${serverLocation}`);
+					outputChannel.appendLine(`Server arguments ${commandArgs.join(' ')}`);
+					const shell = (process.platform === 'win32');
+					extHostProcess = cp.spawn(path.join(serverLocation, 'bin', serverCommand), commandArgs, { env, cwd: serverLocation, shell });
+				}
 			}
 			extHostProcess.stdout!.on('data', (data: Buffer) => processOutput(data.toString()));
 			extHostProcess.stderr!.on('data', (data: Buffer) => processOutput(data.toString()));
