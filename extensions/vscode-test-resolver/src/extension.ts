@@ -142,7 +142,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 			const { updateUrl, commit, quality, serverDataFolderName, serverApplicationName, dataFolderName } = getProductConfiguration();
-			const commandArgs = ['--host=127.0.0.1', '--port=0', '--disable-telemetry', '--disable-experiments', '--use-host-proxy', '--accept-server-license-terms'];
+			let commandArgs = ['--host=127.0.0.1', '--port=0', '--disable-telemetry', '--disable-experiments', '--use-host-proxy', '--accept-server-license-terms'];
 			const env = getNewEnv();
 			const remoteDataDir = process.env['TESTRESOLVER_DATA_FOLDER'] || path.join(os.homedir(), `${serverDataFolderName || dataFolderName}-testresolver`);
 			const logsDir = process.env['TESTRESOLVER_LOGS_FOLDER'];
@@ -178,6 +178,12 @@ export function activate(context: vscode.ExtensionContext) {
 				// If VSCODE_REMOTE_SERVER_PATH is set, use local mode instead of downloading
 				if (serverLocation) {
 					outputChannel.appendLine(`Using local VS Code server at: ${serverLocation}`);
+
+					// When using local server, we don't need to install builtin extensions
+					// Remove any builtin extension installation arguments
+					commandArgs = commandArgs.filter(arg => !arg.startsWith('--install-builtin-extension'));
+					commandArgs = commandArgs.filter(arg => !arg.startsWith('--start-server'));
+
 					const serverCommandPath = path.join(serverLocation, 'scripts', process.platform === 'win32' ? 'code-server.bat' : 'code-server.sh');
 
 					if (fs.existsSync(serverCommandPath)) {
