@@ -18,7 +18,14 @@ export class QuickInput {
 	constructor(private code: Code) { }
 
 	async waitForQuickInputOpened(retryCount?: number): Promise<void> {
-		await this.code.waitForActiveElement(QuickInput.QUICK_INPUT_INPUT, retryCount);
+		// First wait for quick input widget to exist
+		await this.code.waitForElement(QuickInput.QUICK_INPUT, undefined, retryCount || 200);
+
+		// Wait for input element to exist
+		await this.code.waitForElement(QuickInput.QUICK_INPUT_INPUT, undefined, retryCount || 200);
+
+		// Then wait for it to be active
+		await this.code.waitForActiveElement(QuickInput.QUICK_INPUT_INPUT, retryCount || 200);
 	}
 
 	async type(value: string): Promise<void> {

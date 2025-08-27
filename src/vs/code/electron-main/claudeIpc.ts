@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ipcMain } from 'electron';
+import { validatedIpcMain } from '../../base/parts/ipc/electron-main/ipcMain.js';
+import { IpcMainInvokeEvent } from 'electron';
 import { IInstantiationService, createDecorator } from '../../platform/instantiation/common/instantiation.js';
 import { IClaudeMainService, IClaudeConfiguration, IClaudeMessage } from './claudeMainService.js';
 import { ILogService } from '../../platform/log/common/log.js';
@@ -31,11 +32,11 @@ export class ClaudeIpcChannels extends Disposable implements IClaudeIpcChannels 
 		// Test Claude connection
 		this._register({
 			dispose: () => {
-				ipcMain.removeHandler('claude:testConnection');
+				validatedIpcMain.removeHandler('claude:testConnection');
 			}
 		});
 
-		ipcMain.handle('claude:testConnection', async (event, config: IClaudeConfiguration) => {
+		validatedIpcMain.handle('claude:testConnection', async (event: IpcMainInvokeEvent, config: IClaudeConfiguration) => {
 			try {
 				const claudeService = this.instantiationService.invokeFunction(accessor =>
 					accessor.get(IClaudeMainService)
@@ -50,12 +51,12 @@ export class ClaudeIpcChannels extends Disposable implements IClaudeIpcChannels 
 		// Send message to Claude
 		this._register({
 			dispose: () => {
-				ipcMain.removeHandler('claude:sendMessage');
+				validatedIpcMain.removeHandler('claude:sendMessage');
 			}
 		});
 
-		ipcMain.handle('claude:sendMessage', async (
-			event,
+		validatedIpcMain.handle('claude:sendMessage', async (
+			event: IpcMainInvokeEvent,
 			config: IClaudeConfiguration,
 			messages: IClaudeMessage[],
 			options?: {
@@ -79,12 +80,12 @@ export class ClaudeIpcChannels extends Disposable implements IClaudeIpcChannels 
 		// Send streaming message to Claude
 		this._register({
 			dispose: () => {
-				ipcMain.removeHandler('claude:sendStreamingMessage');
+				validatedIpcMain.removeHandler('claude:sendStreamingMessage');
 			}
 		});
 
-		ipcMain.handle('claude:sendStreamingMessage', async (
-			event,
+		validatedIpcMain.handle('claude:sendStreamingMessage', async (
+			event: IpcMainInvokeEvent,
 			config: IClaudeConfiguration,
 			messages: IClaudeMessage[],
 			options?: {

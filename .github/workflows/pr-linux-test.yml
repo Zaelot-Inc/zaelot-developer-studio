@@ -17,7 +17,7 @@ on:
 jobs:
   linux-test:
     name: ${{ inputs.job_name }}
-    runs-on: [ self-hosted, 1ES.Pool=1es-vscode-oss-ubuntu-22.04-x64 ]
+    runs-on: ubuntu-22.04
     env:
       ARTIFACT_NAME: ${{ (inputs.electron_tests && 'electron') || (inputs.browser_tests && 'browser') || (inputs.remote_tests && 'remote') || 'unknown' }}
       NPM_ARCH: x64
@@ -196,12 +196,48 @@ jobs:
             compile-extension:vscode-colorize-perf-tests \
             compile-extension:vscode-test-resolver
 
+      - name: Compile main application
+        run: |
+          set -e
+          # Compile the main application to avoid downloading VS Code
+          npm run gulp compile
+          echo "Main application compiled successfully"
+
+      - name: Verify application compilation
+        run: |
+          set -e
+          # Check if the main application was compiled successfully
+          # The executable name is 'zaelot-dev-studio' for this custom application
+          if [ ! -f ".build/electron/zaelot-dev-studio" ] && [ ! -f ".build/electron/zaelot-dev-studio.exe" ]; then
+            echo "Error: Main application was not compiled successfully"
+            echo "Contents of .build/electron/:"
+            ls -la .build/electron/ || echo "Directory .build/electron/ does not exist"
+            exit 1
+          fi
+          echo "Main application compilation verified successfully"
+
       - name: 🧪 Run integration tests (Electron)
         if: ${{ inputs.electron_tests }}
         timeout-minutes: 20
-        run: ./scripts/test-integration.sh --tfs "Integration Tests"
         env:
           DISPLAY: ":10"
+          # Prevent VS Code download by using local build
+          # Point to the project root so scripts and compiled app are accessible
+          VSCODE_REMOTE_SERVER_PATH: "${{ github.workspace }}"
+          # Force dev mode to avoid commit-based downloads
+          TESTRESOLVER_COMMIT: ""
+        run: |
+          echo "=== Test Configuration Debug ==="
+          echo "Current directory: $(pwd)"
+          echo "VSCODE_REMOTE_SERVER_PATH: $VSCODE_REMOTE_SERVER_PATH"
+          echo "TESTRESOLVER_COMMIT: $TESTRESOLVER_COMMIT"
+          echo "Contents of .build/electron/:"
+          ls -la .build/electron/ || echo "Directory .build/electron/ does not exist"
+          echo "Contents of scripts/:"
+          ls -la scripts/ | grep -E "(code|server)" || echo "No code/server scripts found"
+          echo "================================"
+          echo "Starting integration tests..."
+          ./scripts/test-integration.sh --tfs "Integration Tests"
 
       - name: 🧪 Run integration tests (Browser, Chromium)
         if: ${{ inputs.browser_tests }}
@@ -211,9 +247,25 @@ jobs:
       - name: 🧪 Run integration tests (Remote)
         if: ${{ inputs.remote_tests }}
         timeout-minutes: 20
-        run: ./scripts/test-remote-integration.sh
         env:
           DISPLAY: ":10"
+          # Prevent VS Code download by using local build
+          # Point to the project root so scripts and compiled app are accessible
+          VSCODE_REMOTE_SERVER_PATH: "${{ github.workspace }}"
+          # Force dev mode to avoid commit-based downloads
+          TESTRESOLVER_COMMIT: ""
+        run: |
+          echo "=== Remote Test Configuration Debug ==="
+          echo "Current directory: $(pwd)"
+          echo "VSCODE_REMOTE_SERVER_PATH: $VSCODE_REMOTE_SERVER_PATH"
+          echo "TESTRESOLVER_COMMIT: $TESTRESOLVER_COMMIT"
+          echo "Contents of .build/electron/:"
+          ls -la .build/electron/ || echo "Directory .build/electron/ does not exist"
+          echo "Contents of scripts/:"
+          ls -la scripts/ | grep -E "(code|server)" || echo "No code/server scripts found"
+          echo "================================"
+          echo "Starting remote integration tests..."
+          ./scripts/test-remote-integration.sh
 
       - name: Compile smoke tests
         working-directory: test/smoke
@@ -246,9 +298,14 @@ jobs:
       - name: 🧪 Run smoke tests (Remote)
         if: ${{ inputs.remote_tests }}
         timeout-minutes: 20
-        run: npm run smoketest-no-compile -- --remote --tracing
         env:
           DISPLAY: ":10"
+          # Prevent VS Code download by using local build
+          # Point to the project root so scripts and compiled app are accessible
+          VSCODE_REMOTE_SERVER_PATH: "${{ github.workspace }}"
+          # Force dev mode to avoid commit-based downloads
+          TESTRESOLVER_COMMIT: ""
+        run: npm run smoketest-no-compile -- --remote --tracing
 
       - name: Diagnostics after smoke test run (processes, max_user_watches, number of opened file handles)
         run: |

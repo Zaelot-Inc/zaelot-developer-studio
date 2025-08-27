@@ -142,7 +142,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 			const { updateUrl, commit, quality, serverDataFolderName, serverApplicationName, dataFolderName } = getProductConfiguration();
-			const commandArgs = ['--host=127.0.0.1', '--port=0', '--disable-telemetry', '--disable-experiments', '--use-host-proxy', '--accept-server-license-terms'];
+			let commandArgs = ['--host=127.0.0.1', '--port=0', '--disable-telemetry', '--disable-experiments', '--use-host-proxy', '--accept-server-license-terms'];
 			const env = getNewEnv();
 			const remoteDataDir = process.env['TESTRESOLVER_DATA_FOLDER'] || path.join(os.homedir(), `${serverDataFolderName || dataFolderName}-testresolver`);
 			const logsDir = process.env['TESTRESOLVER_LOGS_FOLDER'];
@@ -174,16 +174,43 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 				const serverCommand = `${serverApplicationName}${process.platform === 'win32' ? '.cmd' : ''}`;
 				let serverLocation = env['VSCODE_REMOTE_SERVER_PATH']; // support environment variable to specify location of server on disk
-				if (!serverLocation) {
+
+				// If VSCODE_REMOTE_SERVER_PATH is set, use local mode instead of downloading
+				if (serverLocation) {
+					outputChannel.appendLine(`Using local VS Code server at: ${serverLocation}`);
+
+					// When using local server, we don't need to install builtin extensions
+					// Remove any builtin extension installation arguments
+					commandArgs = commandArgs.filter(arg => !arg.startsWith('--install-builtin-extension'));
+					commandArgs = commandArgs.filter(arg => !arg.startsWith('--start-server'));
+
+					const serverCommandPath = path.join(serverLocation, 'scripts', process.platform === 'win32' ? 'code-server.bat' : 'code-server.sh');
+
+					if (fs.existsSync(serverCommandPath)) {
+						outputChannel.appendLine(`Launching local server: "${serverCommandPath}" ${commandArgs.join(' ')}`);
+						const shell = (process.platform === 'win32');
+						extHostProcess = cp.spawn(serverCommandPath, commandArgs, { env, cwd: serverLocation, shell });
+					} else {
+						// Fallback to using the server binary directly
+						const serverBinPath = path.join(serverLocation, 'bin', serverCommand);
+						if (fs.existsSync(serverBinPath)) {
+							outputChannel.appendLine(`Using server binary at: ${serverBinPath}`);
+							const shell = (process.platform === 'win32');
+							extHostProcess = cp.spawn(serverBinPath, commandArgs, { env, cwd: serverLocation, shell });
+						} else {
+							throw new Error(`VS Code server not found at ${serverLocation}. Please ensure the application is compiled.`);
+						}
+					}
+				} else {
 					const serverBin = path.join(remoteDataDir, 'bin');
 					progress.report({ message: 'Installing VSCode Server' });
 					serverLocation = await downloadAndUnzipVSCodeServer(updateUrl, commit, quality, serverBin, m => outputChannel.appendLine(m));
-				}
 
-				outputChannel.appendLine(`Using server build at ${serverLocation}`);
-				outputChannel.appendLine(`Server arguments ${commandArgs.join(' ')}`);
-				const shell = (process.platform === 'win32');
-				extHostProcess = cp.spawn(path.join(serverLocation, 'bin', serverCommand), commandArgs, { env, cwd: serverLocation, shell });
+					outputChannel.appendLine(`Using server build at ${serverLocation}`);
+					outputChannel.appendLine(`Server arguments ${commandArgs.join(' ')}`);
+					const shell = (process.platform === 'win32');
+					extHostProcess = cp.spawn(path.join(serverLocation, 'bin', serverCommand), commandArgs, { env, cwd: serverLocation, shell });
+				}
 			}
 			extHostProcess.stdout!.on('data', (data: Buffer) => processOutput(data.toString()));
 			extHostProcess.stderr!.on('data', (data: Buffer) => processOutput(data.toString()));
@@ -479,7 +506,14 @@ export interface IProductConfiguration {
 
 function getProductConfiguration(): IProductConfiguration {
 	const content = fs.readFileSync(path.join(vscode.env.appRoot, 'product.json')).toString();
-	return JSON.parse(content) as IProductConfiguration;
+	const config = JSON.parse(content) as IProductConfiguration;
+
+	// If using a custom commit like "zaelot-dev", replace with a stable VSCode commit for testing
+	if (config.commit === 'zaelot-dev') {
+		config.commit = '1a5daa3a0231a0fbba4f14db7ec463cf99d7768e'; // VSCode 1.95.3 stable
+	}
+
+	return config;
 }
 
 function getNewEnv(): { [x: string]: string | undefined } {

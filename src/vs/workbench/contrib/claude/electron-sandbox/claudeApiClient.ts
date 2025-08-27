@@ -5,59 +5,13 @@
 
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { Emitter } from '../../../../base/common/event.js';
-import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { IMainProcessService } from '../../../../platform/ipc/common/mainProcessService.js';
 import {
-	IClaudeConfiguration, IClaudeMessage, IClaudeResponse, IClaudeStreamResponse, ClaudeModelId
-} from './claudeTypes.js';
+	IClaudeConfiguration, IClaudeMessage, IClaudeResponse, IClaudeStreamResponse, ClaudeModelId, IClaudeApiClient
+} from '../common/claudeTypes.js';
 
-export const IClaudeApiClient = createDecorator<IClaudeApiClient>('claudeApiClient');
 
-export interface IClaudeApiClient {
-	readonly _serviceBrand: undefined;
-
-	/**
-	 * Event fired when the API client configuration changes
-	 */
-	readonly onDidChangeConfiguration: import('../../../../base/common/event.js').Event<void>;
-
-	/**
-	 * Configure the API client with API key and other settings
-	 */
-	configure(config: IClaudeConfiguration): void;
-
-	/**
-	 * Check if the API client is properly configured
-	 */
-	isConfigured(): boolean;
-
-	/**
-	 * Send a message to Claude and get a streaming response
-	 */
-	sendMessage(
-		messages: IClaudeMessage[],
-		model: ClaudeModelId,
-		options?: {
-			maxTokens?: number;
-			temperature?: number;
-			tools?: any[];
-			toolChoice?: any;
-		},
-		onProgress?: (chunk: IClaudeStreamResponse) => void,
-		token?: CancellationToken
-	): Promise<IClaudeResponse>;
-
-	/**
-	 * Count tokens in a message (estimation)
-	 */
-	estimateTokens(text: string): number;
-
-	/**
-	 * Test the API connection
-	 */
-	testConnection(token?: CancellationToken): Promise<boolean>;
-}
 
 export class ClaudeApiClient implements IClaudeApiClient {
 	readonly _serviceBrand: undefined;

@@ -56,7 +56,13 @@ then
 	echo "Using remote server out of sources for integration tests"
 else
 	echo "Using $VSCODE_REMOTE_SERVER_PATH as server path for integration tests"
-	export TESTRESOLVER_INSTALL_BUILTIN_EXTENSION='ms-vscode.vscode-smoketest-check'
+	# Don't force builtin extension installation when using local server
+	# This prevents VS Code download
+	if [ -z "$TESTRESOLVER_COMMIT" ]; then
+		echo "Using local server mode - skipping builtin extension installation"
+	else
+		export TESTRESOLVER_INSTALL_BUILTIN_EXTENSION='ms-vscode.vscode-smoketest-check'
+	fi
 fi
 
 if [ -z "$INTEGRATION_TEST_APP_NAME" ]; then

@@ -15,8 +15,7 @@ import {
 	IChatMessage
 } from '../../chat/common/languageModels.js';
 import { ExtensionIdentifier } from '../../../../platform/extensions/common/extensions.js';
-import { IClaudeApiClient } from './claudeApiClient.js';
-import { CLAUDE_MODELS, ClaudeModelId, IClaudeMessage } from './claudeTypes.js';
+import { IClaudeApiClient, CLAUDE_MODELS, ClaudeModelId, IClaudeMessage } from './claudeTypes.js';
 
 export class ClaudeLanguageModelProvider extends Disposable implements ILanguageModelChatProvider {
 
